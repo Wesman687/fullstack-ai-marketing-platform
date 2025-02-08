@@ -16,6 +16,7 @@ function ProjectList({ projects }: ProjectListProps) {
         <Link key={project.id} href={`/project/${project.id}`}>
           <Card className="border border-gray-200 rounded-3xl p-3 hover:border-main hover:scale-[1.01] hover:shadow-md hover:text-main transition-all duration-300">
             <CardHeader className="pb-3 sm:pb-4 lg:pb-5 w-full">
+              
               <CardTitle className="text-lg sm:text-xl lg:text-2xl truncate">
                 {project.title}
               </CardTitle>
