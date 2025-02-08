@@ -1,0 +1,33 @@
+.env
+.env.local
+.env.*.local
+.next/
+.vercel/
+node_modules/
+drizzle.config.ts
+nextjs/node_modules/
+nextjs/.env
+nextjs/.env.local
+nextjs/.next/
+nextjs/.vercel/
+out/
+dist/
+.DS_Store
+# Ignore Node.js dependencies
+node_modules/
+.next/
+dist/
+
+# Ignore Python caches and builds
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+env/
+*.egg-info/
+build/
+dist/
+poetry.lock
+drizzleconfig.ts
+
