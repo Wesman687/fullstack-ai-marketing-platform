@@ -5,12 +5,12 @@ import ProjectDetailBody from './ProjectDetailBody';
 import ProjectDetailHeader from './ProjectDetailHeader';
 import { Project } from '@/server/db/schema';
 
-interface ProjectPageProps {
-  project: Project
-}
+// interface ProjectPageProps {
+//   project: Project
+// }
 
 
-export default function ProjectDetailView({  project }: ProjectPageProps) {
+export default function ProjectDetailView() {
 
   return (
     <div>
