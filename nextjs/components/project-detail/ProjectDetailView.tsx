@@ -9,7 +9,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-const ManageUploadStep = lazy(() => import('../ManageUploadStep'))
+const ManageUploadStep = lazy(() => import('../upload-step/ManageUploadStep'))
 const ConfigurePromptsStep = lazy(() => import('../ConfigurePromptsStep'))
 const GenerateContextStep = lazy(() => import('../GenerateContextStep'))
 
@@ -71,7 +71,10 @@ export default function ProjectDetailView({ project }: ProjectPageProps) {
     <div className='max-w-screen-xl mx-auto p-4 sm:p-6 lg:p-8 bg-white space-y-12'>
       <ProjectDetailHeader project={project} setIsShowDeleteConfirmation={setIsShowDeleteConfirmation} title={title} setTitle={setTitle} />
       <ProjectDetailStepper steps={steps} currentStep={currentStep} handleStepClick={handleStepClick}  />
+      <div className='bg-gray-50 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-sm mt-10 sm:mt-12 lg:mt-10'>
       <ProjectDetailBody steps={steps} currentStep={currentStep} projectId={project.id} />
+      </div>
+
 
       {isShowDeleteConfirmation && <ConfirmationModal
         isOpen={isShowDeleteConfirmation}
