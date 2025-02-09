@@ -4,7 +4,7 @@
 .next/
 .vercel/
 node_modules/
-drizzle.config.ts
+next/drizzle.config.ts
 nextjs/node_modules/
 nextjs/.env
 nextjs/.env.local

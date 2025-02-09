@@ -2,7 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/server/db";
-import {  projectsTable } from "@/server/db/schema";
+import {  projectsTable } from "@/server/db/schema/schema";
 
 export async function createProject(formData: FormData) {
     const { userId } = await auth();

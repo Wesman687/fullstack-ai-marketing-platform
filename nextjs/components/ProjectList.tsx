@@ -1,6 +1,6 @@
 import React from 'react'
 import { Card, CardHeader, CardTitle } from './ui/card';
-import { Project } from '@/server/db/schema';
+import { Project } from '@/server/db/schema/schema';
 import { getTimeDifference } from '@/lib/utils';
 import Link from 'next/link';
 

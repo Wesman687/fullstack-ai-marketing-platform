@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
 import { DGO_DATABASE, DGO_HOST, DGO_PASSWORD, DGO_PORT, DGO_USER } from "@/lib/config";
-import * as schema from "./schema";
+import * as schema from "./schema/schema";
 
 async function connectDB() {
   console.log("Connecting to database...");
