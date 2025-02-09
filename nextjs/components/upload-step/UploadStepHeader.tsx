@@ -19,8 +19,8 @@ function UploadStepHeader() {
             setUploading(true); 
         }      
     }
-    const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-
+    const handleDrop = (event: React.DragEvent<HTMLInputElement>) => {
+        setBrowserFiles(Array.from(event.dataTransfer.files));      
     };
   return (
     <div>
