@@ -3,22 +3,22 @@ import mysql from "mysql2/promise";
 import { DGO_DATABASE, DGO_HOST, DGO_PASSWORD, DGO_PORT, DGO_USER } from "@/lib/config";
 import * as schema from "./schema/schema";
 
-async function connectDB() {
-  console.log("Connecting to database...");
-    
-  const connection = await mysql.createConnection({
-    host: DGO_HOST,
-    user: DGO_USER,
-    password: DGO_PASSWORD,
-    database: DGO_DATABASE,
-    port: Number(DGO_PORT), // Ensure port is a number
-  });
+// ✅ Create a MySQL Connection Pool
+const pool = mysql.createPool({
+  host: DGO_HOST,
+  user: DGO_USER,
+  password: DGO_PASSWORD,
+  database: DGO_DATABASE,
+  port: Number(DGO_PORT), // Ensure port is a number
+  waitForConnections: true,
+  connectionLimit: 10, // ✅ Limit concurrent connections to avoid overload
+  queueLimit: 0, // 0 means unlimited queue (change if needed)
+});
 
-  return connection;
-}
-
-// ✅ Establish a single shared database instance
-const dbPromise = connectDB().then((connection) => drizzle(connection, { schema, mode: "default" }));
+// ✅ Use a single drizzle instance with a pooled connection
+const dbPromise = pool.getConnection().then((connection) => {
+  return drizzle(connection, { schema, mode: "default" });
+});
 
 // ✅ Export `db` as an async function
 export async function db() {
