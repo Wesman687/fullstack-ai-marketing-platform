@@ -10,9 +10,9 @@ const pool = mysql.createPool({
   password: DGO_PASSWORD,
   database: DGO_DATABASE,
   port: Number(DGO_PORT), // Ensure port is a number
-  waitForConnections: true,
-  connectionLimit: 10, // ✅ Limit concurrent connections to avoid overload
-  queueLimit: 0, // 0 means unlimited queue (change if needed)
+  waitForConnections: true,  // ✅ Ensures connections wait instead of failing
+  connectionLimit: 5,        // ✅ Limit to 5 active connections
+  queueLimit: 10             // ✅ Max queued requests before erroring out
 });
 
 // ✅ Use a single drizzle instance with a pooled connection
