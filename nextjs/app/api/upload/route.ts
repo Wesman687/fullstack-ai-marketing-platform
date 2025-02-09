@@ -6,12 +6,13 @@ import { NextResponse } from 'next/server';
  
 export async function POST(request: Request): Promise<NextResponse> {
   const body = (await request.json()) as HandleUploadBody;
- 
   try {
     const jsonResponse = await handleUpload({
       body,
       request,
       onBeforeGenerateToken: async ( pathname, clientPayload) => {
+        
+        console.log("Before generating token - Pathname:", pathname, "Payload:", clientPayload);
         const { userId } = await auth()
         if (!userId) {
           return {};
@@ -36,7 +37,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         // ⚠️ This will not work on `localhost` websites,
         // Use ngrok or similar to get the full upload flow
         if (!tokenPayload) return;
-        const { projectId, fileType, mimeType, size } = JSON.parse(tokenPayload);
+        const { projectId, file: fileType, mimeType, size } = JSON.parse(tokenPayload);
 
         console.log(`Saving blob URL ${blob.url} to database for project ${projectId} with filename ${blob.pathname}`);
  
