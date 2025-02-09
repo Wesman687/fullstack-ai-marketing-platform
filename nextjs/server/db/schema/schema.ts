@@ -19,7 +19,10 @@ export const projectsTable = mysqlTable("projects", {
 // ✅ Explicitly export schema as a single object
 
 export const assetTable = mysqlTable("assets", {
-  id: varchar("id", { length: 36 }).primaryKey().notNull(), // UUID as VARCHAR(36)
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .notNull()
+    .default(sql`(UUID())`), // ✅ MySQL will generate a UUID automatically
   projectId: varchar("project_id", { length: 36 })
     .notNull()
     .references(() => projectsTable.id, { onDelete: "cascade" }),
@@ -35,9 +38,13 @@ export const assetTable = mysqlTable("assets", {
   updatedAt: timestamp("updated_at").defaultNow().notNull().onUpdateNow(),
 });
 
+
 // ✅ Asset Processing Jobs Table (MySQL Conversion)
 export const assetProcessingJobTable = mysqlTable("asset_processing_jobs", {
-  id: varchar("id", { length: 36 }).primaryKey().notNull(),
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .notNull()
+    .default(sql`(UUID())`),
   assetId: varchar("asset_id", { length: 36 })
     .notNull()
     .unique()
