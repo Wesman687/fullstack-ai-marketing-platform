@@ -1,38 +1,17 @@
 'use client'
 import { Asset } from '@/server/db/schema/schema'
-import axios from 'axios'
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { Skeleton } from '../ui/skeleton'
 import { AudioLines, FileMinus, Video, File, Dot, Trash } from 'lucide-react'
 import { Button } from '../ui/button'
 
 interface UploadStepBodyProps {
-    projectId: string
+    isLoading: boolean
     setDeleteAssetId: React.Dispatch<React.SetStateAction<string | null>>
+    uploadedAssets: Asset[]
 }
 
-function UploadStepBody({ projectId, setDeleteAssetId }: UploadStepBodyProps) {
-    const [isLoading, setIsLoading] = useState(true)
-    const [uploadedAssets, setUploadedAssets] = useState<Asset[]>([])
-
-    useEffect(() => {
-        setIsLoading(true)
-        const fetchAssets = async () => {
-            // ✅ Ensure loading state starts here
-            try {
-                const response = await axios.get<{ assets: Asset[] }>(`/api/assets/${projectId}`)
-                console.log("✅ Assets Response:", response.data) // Debugging
-                setUploadedAssets(response.data.assets || []) // ✅ Ensure always an array
-            } catch (error) {
-                console.error("❌ Failed to fetch assets", error)
-                setUploadedAssets([]) // ✅ Prevents `map` errors
-            } finally {
-                setIsLoading(false) // ✅ Only disable loading after request completes
-            }
-        }
-        fetchAssets()
-    }, [projectId]) // ✅ Ensure effect runs when `projectId` changes
-
+function UploadStepBody({  setDeleteAssetId, isLoading, uploadedAssets }: UploadStepBodyProps) {
     if (isLoading) {
         return (
             <div className='space-y-2 sm:space-y-3 md:space-y-4'>
@@ -42,7 +21,6 @@ function UploadStepBody({ projectId, setDeleteAssetId }: UploadStepBodyProps) {
             </div>
         )
     }
-
     return (
         <div>
             <div className='flex flex-col sm:flex-row sm:justify-between sm:items-end mb-4 mt-3'>

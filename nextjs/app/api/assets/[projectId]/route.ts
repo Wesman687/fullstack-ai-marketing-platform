@@ -31,8 +31,8 @@ export async function DELETE(request: NextRequest) {
     const { userId } = getAuth(request)
     if (!userId) { return NextResponse.json({ error: "Unauthorized" }, { status: 401 }) }
     const url = new URL(request.url);
-    const projectId = String(url.pathname.split("/")[2]);
-    const assetId = String(url.pathname.split("/").pop());
+    const projectId = String(url.pathname.split("/")[3]);
+    const assetId = url.searchParams.get("assetId");
 
     try {
         const database = await db(); // ✅ Await db() to get the instance
@@ -40,16 +40,16 @@ export async function DELETE(request: NextRequest) {
         const asset = await database
             .select()
             .from(assetTable)
-            .where(and(eq(assetTable.projectId, projectId), eq(assetTable.id, assetId)))
+            .where(and(eq(assetTable.projectId, projectId), eq(assetTable.id, assetId!)))
             .limit(1);
         if (asset.length === 0) {
             return NextResponse.json({ error: "Asset not found" }, { status: 404 });
         }
-        await database.delete(assetTable).where(and(eq(assetTable.projectId, projectId), eq(assetTable.id, assetId)));
+        await database.delete(assetTable).where(and(eq(assetTable.projectId, projectId), eq(assetTable.id, assetId!)));
         await del(asset[0].fileUrl);
 
         return NextResponse.json({ success: true }, { status: 200 });
-        
+
     } catch (error) {
 
         console.log(error)
