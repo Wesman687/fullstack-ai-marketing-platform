@@ -10,16 +10,39 @@ const pool = mysql.createPool({
   password: DGO_PASSWORD,
   database: DGO_DATABASE,
   port: Number(DGO_PORT), // Ensure port is a number
-  waitForConnections: true,  // ✅ Ensures connections wait instead of failing
-  connectionLimit: 5,        // ✅ Limit to 5 active connections
+  waitForConnections: true,
+  connectionLimit: 5, // ✅ Prevents too many open connections
+  queueLimit: 0,  
+  connectTimeout: 10000,
+  multipleStatements: true, // ✅ Allows multiple queries per connection
 });
 
-// ✅ Use a single drizzle instance with a pooled connection
-const dbPromise = pool.getConnection().then((connection) => {
-  return drizzle(connection, { schema, mode: "default" });
-});
-
-// ✅ Export `db` as an async function
+// ✅ Use a function to handle database connections
 export async function db() {
-  return dbPromise;
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    console.log("✅ Database connection established");
+    const database = drizzle(connection, { schema, mode: "default" });
+    return database;
+  } catch (error) {
+    console.error("❌ Database connection error:", error);
+    throw error;
+  } finally {
+    if (connection) {
+      connection.release(); // ✅ Always release connection back to the pool
+      console.log("🔄 Connection released");
+    }
+  }
 }
+
+// ✅ Keep-Alive Mechanism to Prevent Timeouts
+setInterval(async () => {
+  try {
+    const database = await db();
+    await database.execute("SELECT 1"); // ✅ Keeps MySQL connection alive
+    console.log("🔄 Keep-alive ping successful");
+  } catch (error) {
+    console.error("❌ Keep-alive ping failed:", error);
+  }
+}, 300000); // Runs every 5 minutes

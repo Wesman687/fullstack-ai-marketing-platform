@@ -10,9 +10,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     const jsonResponse = await handleUpload({
       body,
       request,
-      onBeforeGenerateToken: async ( pathname, clientPayload) => {
-        
-        console.log("Before generating token - Pathname:", pathname, "Payload:", clientPayload);
+      onBeforeGenerateToken: async ( pathname, clientPayload) => {        
         const { userId } = await auth()
         if (!userId) {
           return {};
@@ -38,8 +36,6 @@ export async function POST(request: Request): Promise<NextResponse> {
         // Use ngrok or similar to get the full upload flow
         if (!tokenPayload) return;
         const { projectId, file: fileType, mimeType, size } = JSON.parse(tokenPayload);
-
-        console.log(`Saving blob URL ${blob.url} to database for project ${projectId} with filename ${blob.pathname}`);
  
         try {
             const database = await db();
