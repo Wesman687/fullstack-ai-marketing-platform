@@ -21,8 +21,7 @@ export const projectsTable = mysqlTable("projects", {
 export const assetTable = mysqlTable("assets", {
   id: varchar("id", { length: 36 })
     .primaryKey()
-    .notNull()
-    .default(sql`(UUID())`), // ✅ MySQL will generate a UUID automatically
+    .notNull(), // ✅ MySQL will generate a UUID automatically
   projectId: varchar("project_id", { length: 36 })
     .notNull()
     .references(() => projectsTable.id, { onDelete: "cascade" }),
