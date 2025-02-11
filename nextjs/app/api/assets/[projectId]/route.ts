@@ -6,11 +6,14 @@ import { and, eq } from "drizzle-orm"
 import { NextRequest, NextResponse } from "next/server"
 import { del } from '@vercel/blob'
 
-export async function GET(request: NextRequest, context: { params: { projectId: string } }) {
+export async function GET(request: NextRequest) {
     const { userId } = getAuth(request);
     if (!userId) { return NextResponse.json({ error: "Unauthorized" }, { status: 401 }) }
 
-    const { projectId } = context.params; // ✅ Get projectId from context.params
+    const url = new URL(request.url);
+    const pathSegments = url.pathname.split("/");
+    const projectId = pathSegments[3]; 
+
 
     try {
         const database = await db(); // ✅ Await db() to get the instance
@@ -29,13 +32,15 @@ export async function GET(request: NextRequest, context: { params: { projectId: 
     }
 }
 
-export async function DELETE(request: NextRequest, context: { params: { projectId: string } }) {
+export async function DELETE(request: NextRequest) {
     const { userId } = getAuth(request);
     if (!userId) { return NextResponse.json({ error: "Unauthorized" }, { status: 401 }) }
 
-    const { projectId } = context.params; // ✅ Get projectId from context.params
     const url = new URL(request.url);
     const assetId = url.searchParams.get("assetId");
+    const pathSegments = url.pathname.split("/");
+    const projectId = pathSegments[3]; 
+
 
     if (!assetId) {
         return NextResponse.json({ error: "Missing assetId" }, { status: 400 });
