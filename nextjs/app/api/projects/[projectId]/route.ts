@@ -1,6 +1,6 @@
 'use server'
 import { db } from "@/server/db"
-import { projectsTable } from "@/server/db/schema/schema"
+import { assetProcessingJobTable, projectsTable } from "@/server/db/schema/schema"
 import { getAuth } from "@clerk/nextjs/server"
 import { and, eq } from "drizzle-orm"
 import { NextRequest, NextResponse } from "next/server"
@@ -45,7 +45,7 @@ export async function PATCH(request: NextRequest) {
         .select()
         .from(projectsTable)
         .where(eq(projectsTable.id, projectId));
-
+    database.$client.destroy();
     return NextResponse.json({ message: "Project updated successfully", project: updatedProject }, { status: 200 });
 }
 
@@ -61,9 +61,13 @@ export async function DELETE(request: NextRequest) {
     const [result] = await database
         .delete(projectsTable)
         .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
-
+        
+    const [result2] = await database
+        .delete(assetProcessingJobTable)
+        .where(eq(assetProcessingJobTable.projectId, projectId));
+    database.$client.destroy();
     // ✅ Check if any rows were affected (for MySQL)
-    if (!result || result.affectedRows === 0) {
+    if (!result || !result2 || result.affectedRows === 0) {
         return NextResponse.json({ error: "Project not found or unauthorized" }, { status: 404 });
     }
 

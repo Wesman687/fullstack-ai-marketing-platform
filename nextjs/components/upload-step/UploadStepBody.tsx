@@ -1,17 +1,46 @@
 'use client'
 import { Asset } from '@/server/db/schema/schema'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Skeleton } from '../ui/skeleton'
 import { AudioLines, FileMinus, Video, File, Dot, Trash } from 'lucide-react'
 import { Button } from '../ui/button'
+import { formatFileTokens } from '@/app/utils/formateFileTokens'
+import { MAX_TOKENS_ASSETS } from '@/lib/constants'
+import { cn } from '@/lib/utils'
+
 
 interface UploadStepBodyProps {
     isLoading: boolean
     setDeleteAssetId: React.Dispatch<React.SetStateAction<string | null>>
     uploadedAssets: Asset[]
+    assetJobStatus: Record<string, string>
+
 }
 
-function UploadStepBody({  setDeleteAssetId, isLoading, uploadedAssets }: UploadStepBodyProps) {
+function UploadStepBody({ setDeleteAssetId, isLoading, uploadedAssets, assetJobStatus }: UploadStepBodyProps) {
+    const [isExceeded, setIsExceeded] = React.useState(false)
+    const [formattedPercentage, setFormattedPercentage] = React.useState(0)
+    const [usagePercentage, setUsagePercentage] = React.useState(0)
+
+    useEffect(() => {
+        const calculatedTotalTokens = uploadedAssets.reduce(
+            (sum, file) => sum + (file.tokenCount || 0),
+            0
+        );
+
+        const calculatedUsagePercentage = Math.min(
+            (calculatedTotalTokens / MAX_TOKENS_ASSETS) * 100,
+            100
+        );
+        setUsagePercentage(calculatedUsagePercentage);
+
+        const calculatedFormattedPercentage = Math.round(calculatedUsagePercentage);
+        setFormattedPercentage(calculatedFormattedPercentage);
+
+        const exceeded = calculatedTotalTokens > MAX_TOKENS_ASSETS;
+        setIsExceeded(exceeded);
+    }, [uploadedAssets]);
+
     if (isLoading) {
         return (
             <div className='space-y-2 sm:space-y-3 md:space-y-4'>
@@ -25,8 +54,29 @@ function UploadStepBody({  setDeleteAssetId, isLoading, uploadedAssets }: Upload
         <div>
             <div className='flex flex-col sm:flex-row sm:justify-between sm:items-end mb-4 mt-3'>
                 <h3 className='font-bold text-lg mb-2 sm:mb-0'>Uploaded Files:</h3>
-                Progress Bar
+                <div className="w-full sm:max-w-xs space-y-2">
+                    <p
+                        className={cn(
+                            "text-sm text-center sm:text-right truncate",
+                            isExceeded ? "text-red-500 font-medium" : "text-gray-600"
+                        )}
+                    >
+                        {isExceeded
+                            ? "Content Limit Exceeded. Please delete assets"
+                            : `${formattedPercentage}% of ${MAX_TOKENS_ASSETS.toLocaleString()} tokens used`}
+                    </p>
+                    <div className="w-full bg-gray-300 rounded-full h-2.5 mb-1">
+                        <div
+                            className={cn(
+                                "h-2.5 rounded-full",
+                                isExceeded ? "bg-red-500" : "bg-main"
+                            )}
+                            style={{ width: `${usagePercentage}%` }}
+                        ></div>
+                    </div>
+                </div>
             </div>
+
             {uploadedAssets.length > 0 ? (
                 <ul className='space-y-1'>
                     {uploadedAssets.map(asset => (
@@ -39,11 +89,11 @@ function UploadStepBody({  setDeleteAssetId, isLoading, uploadedAssets }: Upload
                                     </span>
                                     <div className="flex flex-col sm:flex-row sm:items-center text-gray-500 w-full min-w-0">
                                         <p className="text-xs sm:text-sm truncate">
-                                            Job Status: {"Unknown"}
+                                            Job Status: {assetJobStatus[asset.id] || 'Unknown'}
                                         </p>
                                         <Dot className="hidden sm:flex flex-shrink-0" />
                                         <p className="text-xs sm:text-sm truncate">
-                                            Tokens: ?
+                                            Tokens: {formatFileTokens(asset.tokenCount || 0)}
                                         </p>
                                     </div>
                                 </div>

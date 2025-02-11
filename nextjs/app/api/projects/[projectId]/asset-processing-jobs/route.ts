@@ -27,8 +27,9 @@ export async function GET(request: NextRequest) {
             .select()
             .from(assetProcessingJobTable)
             .where(eq(assetProcessingJobTable.projectId, projectId));
-
-        return NextResponse.json({ assets }, { status: 200 });
+        
+        database.$client.destroy();
+        return NextResponse.json(assets , { status: 200 });
 
     } catch (error) {
         console.error("❌ Error fetching assets:", error);

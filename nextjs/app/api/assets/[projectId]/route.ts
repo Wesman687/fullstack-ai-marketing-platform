@@ -20,6 +20,8 @@ export async function GET(request: NextRequest, context: { params: { projectId: 
             .from(assetTable)
             .where(eq(assetTable.projectId, projectId));
 
+        database.$client.destroy();  // ✅ Release the connection
+
         return NextResponse.json({ assets }, { status: 200 });
     } catch (error) {
         console.error("❌ Error fetching assets:", error);
@@ -47,6 +49,7 @@ export async function DELETE(request: NextRequest, context: { params: { projectI
             .from(assetTable)
             .where(and(eq(assetTable.projectId, projectId), eq(assetTable.id, assetId)))
             .limit(1);
+        
 
         if (asset.length === 0) {
             return NextResponse.json({ error: "Asset not found" }, { status: 404 });
@@ -57,6 +60,7 @@ export async function DELETE(request: NextRequest, context: { params: { projectI
 
         // ✅ Delete from Vercel Blob Storage
         await del(asset[0].fileUrl);
+        database.$client.destroy();
 
         return NextResponse.json({ success: true }, { status: 200 });
 

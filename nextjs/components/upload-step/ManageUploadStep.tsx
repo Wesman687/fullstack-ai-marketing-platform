@@ -19,10 +19,12 @@ function ManageUploadStep({ projectId }: ManageUploadStepProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [browserFiles, setBrowserFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
-  const inputFileRef = useRef<HTMLInputElement | null>(null)
   const [assetJobStatus, setAssetJobStatus] = useState<Record<string, string>>({
 
   });
+  const prevAssetJobStatusRef = useRef<Record<string, string>>({});
+  const inputFileRef = useRef<HTMLInputElement | null>(null)
+
   async function deleteAsset(assetId: string) {
     setIsDeleting(true)
     try {
@@ -38,7 +40,9 @@ function ManageUploadStep({ projectId }: ManageUploadStepProps) {
     }
   }
   const fetchAssets = useCallback(async () => {
-    setIsLoading(true)
+    if (uploadedAssets.length === 0) {
+      setIsLoading(true)
+    }
     try {
       const response = await axios.get<{ assets: Asset[] }>(`/api/projects/${projectId}/assets`)
       setUploadedAssets(response.data.assets || [])
@@ -48,37 +52,56 @@ function ManageUploadStep({ projectId }: ManageUploadStepProps) {
     } finally {
       setIsLoading(false)
     }
-  }, [projectId])
+  }, [projectId, uploadedAssets.length])
 
   useEffect(() => {
     fetchAssets()
-  }, [fetchAssets, browserFiles])
-  const fetchAssetProcessingJobs = useCallback(async() => {
+  }, [fetchAssets])
+
+  const fetchAssetProcessingJobs = useCallback(async () => {
     const controller = new AbortController();
-    setIsLoading(true);
     try {
       const response = await axios.get<AssetProcessingJob[]>(
         `/api/projects/${projectId}/asset-processing-jobs`,
-    )
-    const NewAssetJobStatus: Record<string, string> = {};
-    response.data.forEach((job)=> {
-      NewAssetJobStatus[job.assetId] = job.status; 
-    })
+        { signal: controller.signal } // ✅ Attach AbortSignal to cancel previous requests
+      );
+      const newAssetJobStatus: Record<string, string> = {};
+      response.data.forEach((job) => {
+        newAssetJobStatus[job.assetId] = job.status;
+      });
+      setAssetJobStatus(newAssetJobStatus);
+      const prevAssetJobStatus = prevAssetJobStatusRef.current;
+      const isAnyStatusChangedToCompleted = response.data.some((job) => {
+        const prevStatus = prevAssetJobStatus[job.assetId];
+        const newStatus = job.status;
+        return prevStatus !== "completed" && newStatus === "completed";
+      });
+
+      // Update the previous statuses reference
+      prevAssetJobStatusRef.current = newAssetJobStatus;
+
+      if (isAnyStatusChangedToCompleted) {
+        console.log("Fetching files after status change to completed");
+        await fetchAssets();
+      }
+  
     } catch (error) {
-      console.log(error)
+      console.log(error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
+  
     return () => controller.abort(); // ✅ Cleanup function to cancel previous request
-}, [projectId]); // ✅ Ensures only one request runs at a time
+  }, [projectId]); // ✅ Only depends on `projectId`
+   // ✅ Ensures only one request runs at a time
 
   useEffect(() => {
-    fetchAssetProcessingJobs();
-    const intervalId = setInterval(fetchAssetProcessingJobs, 10000);    
-    return () => {
-        clearInterval(intervalId);
-    };
-}, [fetchAssetProcessingJobs]);
+    const intervalId = setInterval(() => {
+      fetchAssetProcessingJobs();
+    }, 5000);
+  
+    return () => clearInterval(intervalId); // Cleanup on unmount
+  }, []);
 
   const handleUpload = async () => {
     setUploading(true)
@@ -141,6 +164,7 @@ function ManageUploadStep({ projectId }: ManageUploadStepProps) {
         uploadedAssets={uploadedAssets}
         isLoading={isLoading}
         setDeleteAssetId={setDeleteAssetId}
+        assetJobStatus={assetJobStatus}
       />
       <ConfirmationModal
         isOpen={!!deleteAssetId}

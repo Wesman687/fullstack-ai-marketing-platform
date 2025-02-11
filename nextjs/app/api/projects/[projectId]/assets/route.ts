@@ -22,6 +22,8 @@ export async function GET(request: NextRequest) {
             .select()
             .from(assetTable)
             .where(and(eq(assetTable.projectId, projectId)));
+        
+        database.$client.destroy();
         return NextResponse.json({ assets }, { status: 200 });
     } catch (error) {
         console.log(error)
@@ -62,6 +64,7 @@ export async function DELETE(request: NextRequest) {
         await database.delete(assetTable).where(and(eq(assetTable.projectId, projectId), eq(assetTable.id, assetId!)));
         await del(asset[0].fileUrl);
 
+        database.$client.destroy();
         return NextResponse.json({ success: true }, { status: 200 });
 
     } catch (error) {

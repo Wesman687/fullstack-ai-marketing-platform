@@ -56,9 +56,10 @@ export async function POST(request: Request): Promise<NextResponse> {
           await database.insert(assetProcessingJobTable).values({
             assetId: assetId,  // ✅ Ensure ID is passed as a string
             projectId: projectId,
-            status: 'pending',
+            status: 'created',
           });
-
+          
+        database.$client.destroy();
         } catch (error) {
           throw new Error('Could not save asset or asset processing job to database');
           console.log(error)
