@@ -1,0 +1,15 @@
+{
+  "python.defaultInterpreterPath": "/mnt/c/Code/AiMarketing/fullstack-ai-marketing-platform/asset-processing-service/.venv/bin/python",
+  "python.analysis.extraPaths": [
+    "./asset_processing_service"
+  ],
+  "editor.formatOnSave": true,
+  "python.formatting.provider": "black",
+  "python.languageServer": "Pylance",
+  "python.analysis.typeCheckingMode": "off",
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportUnusedImport": "none",
+    "reportMissingImports": "none",
+    "reportMissingModuleSource": "none"
+  }
+}

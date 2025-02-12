@@ -1,19 +1,27 @@
 [project]
 name = "asset-processing-service"
 version = "0.1.0"
-description = ""
+description = "This is the asset processing service for the fullstack AI marketing platform"
 authors = [
     {name = "Wesman687",email = "wesman687@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
+    "aiohttp (>=3.11.12,<4.0.0)",
+    "python-dotenv (>=1.0.1,<2.0.0)",
+    "pydantic (>=2.10.6,<3.0.0)"
 ]
 
 [tool.poetry.scripts]
 asset-processing-service = "asset_processing_service.main:main"
 
 
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^3.3.4"
+black = "^25.1.0"
+autopep8 = "^2.3.2"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

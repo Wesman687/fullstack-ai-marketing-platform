@@ -26,30 +26,14 @@ export async function db() {
   return drizzle(connection, { schema, mode: "default" });
 }
 
-// ✅ Ensure connection is released properly when done
-// Define interface for connection type
-interface DatabaseConnection {
-  end: () => void;
-}
-
-export async function releaseConnection(connection: DatabaseConnection): Promise<void> {
-  try {
-    connection.end();  // ✅ Gracefully close the connection
-    console.log("🔄 Connection closed properly");
-  } catch (error) {
-    console.error("❌ Error closing connection:", error);
-  }
-}
 setInterval(async () => {
   try {
     const connection = await pool.getConnection();
     await connection.ping();
     connection.release();
-    console.log("🔄 Keep-alive ping successful");
 
     // ✅ Forcefully remove any stuck idle connections
     await pool.query("SELECT 1");
-    console.log("🔄 Checked and cleared idle connections");
 
   } catch (error) {
     console.error("❌ Keep-alive ping failed:", error);
