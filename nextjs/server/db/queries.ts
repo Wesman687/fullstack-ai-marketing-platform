@@ -16,13 +16,13 @@ export async function getProjectsForUser() {
         const database = await db(); // ✅ Await the database connection
         console.log("✅ Database connected successfully");
         // ✅ Run query
-        const projects = await database
+        const projects = await database.drizzle
             .select()
             .from(projectsTable)
             .where(eq(projectsTable.userId, userId))
             .orderBy(desc(projectsTable.updatedAt));
 
-
+        database.release();
         return projects;
     } catch (error) {
         console.error("❌ Error in getProjectsForUser:", error);
@@ -42,7 +42,7 @@ export async function getProject(projectid: string) {
         console.log("✅ Database connected successfully");
         await new Promise((resolve) => setTimeout(resolve, 1500));
         // ✅ Run query
-        const projects = await database
+        const projects = await database.drizzle 
             .select()
             .from(projectsTable)
             .where(
@@ -53,6 +53,6 @@ export async function getProject(projectid: string) {
               )
             .orderBy(desc(projectsTable.updatedAt));
 
-
+        database.release();
         return projects[0] || null;
 }

@@ -18,17 +18,17 @@ export async function GET(request: NextRequest) {
     if (!projectId) {
         return NextResponse.json({ error: "Invalid Project ID" }, { status: 400 });
     }
-    console.log(projectId)
+
 
     try {
         const database = await db(); // ✅ Await db() to get the instance
 
-        const assets = await database
+        const assets = await database.drizzle
             .select()
             .from(assetProcessingJobTable)
             .where(eq(assetProcessingJobTable.projectId, projectId));
         
-        database.$client.destroy();
+        database.release();
         return NextResponse.json(assets , { status: 200 });
 
     } catch (error) {

@@ -29,7 +29,7 @@ export async function PATCH(request: NextRequest) {
 
     const database = await db(); // ✅ Await db() to get the instance
 
-    const [result] = await database
+    const [result] = await database.drizzle
         .update(projectsTable)
         .set({ title })
         .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
@@ -41,11 +41,11 @@ export async function PATCH(request: NextRequest) {
 
 
     // ✅ Fetch the updated project manually
-    const [updatedProject] = await database
+    const [updatedProject] = await database.drizzle
         .select()
         .from(projectsTable)
         .where(eq(projectsTable.id, projectId));
-    database.$client.destroy();
+    database.release();
     return NextResponse.json({ message: "Project updated successfully", project: updatedProject }, { status: 200 });
 }
 
@@ -58,14 +58,14 @@ export async function DELETE(request: NextRequest) {
 
     const database = await db(); // ✅ Await db() to get the instance
 
-    const [result] = await database
+    const [result] = await database.drizzle
         .delete(projectsTable)
         .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
         
-    const [result2] = await database
+    const [result2] = await database.drizzle
         .delete(assetProcessingJobTable)
         .where(eq(assetProcessingJobTable.projectId, projectId));
-    database.$client.destroy();
+    database.release();
     // ✅ Check if any rows were affected (for MySQL)
     if (!result || !result2 || result.affectedRows === 0) {
         return NextResponse.json({ error: "Project not found or unauthorized" }, { status: 404 });

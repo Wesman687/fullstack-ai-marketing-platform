@@ -41,7 +41,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         try {
           const assetId = uuidv4();  // ✅ Generate UUID before inserting
 
-           await database.insert(assetTable).values({
+           await database.drizzle.insert(assetTable).values({
             id: assetId,  // ✅ Explicitly set UUID
             projectId,
             title: blob.pathname.split('/').pop() || blob.pathname,
@@ -53,13 +53,13 @@ export async function POST(request: Request): Promise<NextResponse> {
           }).execute() as ResultSetHeader[];
 
           // ✅ Insert into asset processing job table
-          await database.insert(assetProcessingJobTable).values({
+          await database.drizzle.insert(assetProcessingJobTable).values({
             assetId: assetId,  // ✅ Ensure ID is passed as a string
             projectId: projectId,
             status: 'created',
           });
           
-        database.$client.destroy();
+        database.release();
         } catch (error) {
           throw new Error('Could not save asset or asset processing job to database');
           console.log(error)

@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
 import { DGO_DATABASE, DGO_HOST, DGO_PASSWORD, DGO_PORT, DGO_USER } from "@/lib/config";
 import * as schema from "./schema/schema";
+//database.$client.destroy()
 
 // ✅ Create MySQL Connection Pool (Fixed)
 const pool = mysql.createPool({
@@ -11,7 +12,7 @@ const pool = mysql.createPool({
   database: DGO_DATABASE,
   port: Number(DGO_PORT),
   waitForConnections: true,
-  connectionLimit: 15,  // ✅ Prevents too many connections
+  connectionLimit: 5,  // ✅ Prevents too many connections
   queueLimit: 0,       // ✅ Prevents excessive queuing
   connectTimeout: 10000, // ✅ Prevents long waiting times
   multipleStatements: false, // ✅ Avoids SQL injection risks
@@ -20,12 +21,14 @@ const pool = mysql.createPool({
 // ✅ Function to Get and Release Connections
 export async function db() {
   const connection = await pool.getConnection();
-  console.log("✅ Database connection established");
 
-  // ✅ Keep the drizzle instance open until explicitly closed
-  return drizzle(connection, { schema, mode: "default" });
+  return {
+    drizzle: drizzle(connection, { schema, mode: "default" }),
+    release: () => {
+      connection.release();
+    }
+  };
 }
-
 setInterval(async () => {
   try {
     const connection = await pool.getConnection();

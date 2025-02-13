@@ -18,12 +18,12 @@ export async function GET(request: NextRequest) {
     try {
         const database = await db(); // ✅ Await db() to get the instance
 
-        const assets = await database
+        const assets = await database.drizzle
             .select()
             .from(assetTable)
             .where(and(eq(assetTable.projectId, projectId)));
         
-        database.$client.destroy();
+        database.release();
         return NextResponse.json({ assets }, { status: 200 });
     } catch (error) {
         console.log(error)
@@ -53,7 +53,7 @@ export async function DELETE(request: NextRequest) {
     try {
         const database = await db(); // ✅ Await db() to get the instance
 
-        const asset = await database
+        const asset = await database.drizzle
             .select()
             .from(assetTable)
             .where(and(eq(assetTable.projectId, projectId), eq(assetTable.id, assetId!)))
@@ -61,10 +61,10 @@ export async function DELETE(request: NextRequest) {
         if (asset.length === 0) {
             return NextResponse.json({ error: "Asset not found" }, { status: 404 });
         }
-        await database.delete(assetTable).where(and(eq(assetTable.projectId, projectId), eq(assetTable.id, assetId!)));
+        await database.drizzle.delete(assetTable).where(and(eq(assetTable.projectId, projectId), eq(assetTable.id, assetId!)));
         await del(asset[0].fileUrl);
 
-        database.$client.destroy();
+        database.release();
         return NextResponse.json({ success: true }, { status: 200 });
 
     } catch (error) {

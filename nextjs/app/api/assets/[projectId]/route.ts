@@ -18,12 +18,12 @@ export async function GET(request: NextRequest) {
     try {
         const database = await db(); // ✅ Await db() to get the instance
 
-        const assets = await database
+        const assets = await database.drizzle
             .select()
             .from(assetTable)
             .where(eq(assetTable.projectId, projectId));
 
-        database.$client.destroy();  // ✅ Release the connection
+            database.release(); // ✅ Release the connection
 
         return NextResponse.json({ assets }, { status: 200 });
     } catch (error) {
@@ -49,7 +49,7 @@ export async function DELETE(request: NextRequest) {
     try {
         const database = await db(); // ✅ Await db() to get the instance
 
-        const asset = await database
+        const asset = await database.drizzle
             .select()
             .from(assetTable)
             .where(and(eq(assetTable.projectId, projectId), eq(assetTable.id, assetId)))
@@ -61,11 +61,11 @@ export async function DELETE(request: NextRequest) {
         }
 
         // ✅ Delete asset from database
-        await database.delete(assetTable).where(and(eq(assetTable.projectId, projectId), eq(assetTable.id, assetId)));
+        await database.drizzle.delete(assetTable).where(and(eq(assetTable.projectId, projectId), eq(assetTable.id, assetId)));
 
         // ✅ Delete from Vercel Blob Storage
         await del(asset[0].fileUrl);
-        database.$client.destroy();
+        database.release();
 
         return NextResponse.json({ success: true }, { status: 200 });
 

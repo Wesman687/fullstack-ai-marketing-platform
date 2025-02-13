@@ -16,10 +16,10 @@ export async function createProject(formData: FormData) {
     // ✅ Extract `title` from formData
     const title = formData.get("title") as string | null;
 
-    await database.insert(projectsTable).values({
+    await database.drizzle.insert(projectsTable).values({
         id: newId,
         title: title || "Untitled Project", // ✅ Default to "Untitled Project" if empty
         userId,
     });
-
+    database.release();
 }
