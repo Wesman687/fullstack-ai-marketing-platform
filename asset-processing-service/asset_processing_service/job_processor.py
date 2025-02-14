@@ -46,6 +46,7 @@ async def process_job(job: AssetProcessingJob):
             
         else:
             raise ValueError(f"Invalid content type: {content_type}")
+        logger.info(f"Final Content: {content}")
     
         await update_asset_content(asset.id, content)
         await update_job_details(job.id, {"status": "completed"})

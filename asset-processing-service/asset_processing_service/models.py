@@ -22,7 +22,7 @@ class Asset(BaseModel):
     fileType: str = Field(alias="fileType")
     mimeType: str = Field(alias="mimeType")
     size: int
-    content: str = Field(default="")
+    content: Optional[str] = Field(default="")
     tokenCount: int = Field(default=0)
     createdAt: datetime = Field(default_factory=datetime.now, alias="createdAt")
     updatedAt: datetime = Field(default_factory=datetime.now, alias="updatedAt")

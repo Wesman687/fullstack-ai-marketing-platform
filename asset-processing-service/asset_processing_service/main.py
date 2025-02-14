@@ -1,5 +1,6 @@
 import asyncio
 from collections import defaultdict
+import datetime
 from time import sleep
 from asset_processing_service.api_client import fetch_jobs, update_job_details
 from asset_processing_service.config import Config
@@ -16,8 +17,9 @@ async def job_fetcher(
             logger.info("Fetching job...")
             jobs = await fetch_jobs()        
             for job in jobs: # ✅ Proper async queueing            
-                current_time = asyncio.get_running_loop().time() # ✅ Correctly get the current timestamp            
-                if job.status == "in_progress":
+                current_time = datetime.now().timestamp()     
+                logger.info(f"Current time: {current_time}")
+                if job.status == "in_progress" and job.last_heartbeat:
                     last_heartbeat = job.last_heartbeat.timestamp()             
                     time_since_last_heartbeat = abs(current_time - last_heartbeat)  
                     logger.info(f"Time since last heartbeat for job {job.id}: {time_since_last_heartbeat} seconds")    
