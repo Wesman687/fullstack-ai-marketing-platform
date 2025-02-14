@@ -33,8 +33,8 @@ async def split_audio_file(audio_buffer: bytes, max_chunk_size_bytes: int, origi
         num_chunks = max(1, int((total_size + max_chunk_size_bytes - 1) / max_chunk_size_bytes))
         chunk_duration = duration / num_chunks
         
-        logger.info("Total size: ", total_size)
-        logger.info("Duration: ", duration)
+        logger.info(f"Total size: {total_size}")
+        logger.info(f"Duration: {duration}")
         logger.info(f"Number of chunks: {num_chunks} of {chunk_duration} seconds each")
         
         output_pattern = os.path.join(temp_dir, f"{file_name_without_ext}_chunk_%03d.mp3")
