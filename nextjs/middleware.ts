@@ -10,11 +10,6 @@ const isSecureRoute = createRouteMatcher([
   "/api/asset-processing-job",
   "/api/asset",
 ])
-const isDatabaseRoute = createRouteMatcher([
-  "/api/database", // ✅ Add any API routes handling database queries
-  "/api/projects", // ✅ Example: Allow project fetching
-  "/api/settings",
-]);
 
 const SERVER_API_KEY = process.env.SERVER_API_KEY;
 if (!SERVER_API_KEY) {
@@ -23,10 +18,6 @@ if (!SERVER_API_KEY) {
 
 export default clerkMiddleware(async (auth, request) => {
 
-  
-  if (isDatabaseRoute(request)) {
-    return NextResponse.next();
-  }
   // Await the auth() to get the resolved value
   const user = await auth();
   if (isSecureRoute(request)) {
