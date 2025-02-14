@@ -1,6 +1,6 @@
 import asyncio
 from collections import defaultdict
-import datetime
+from datetime import datetime
 from time import sleep
 from asset_processing_service.api_client import fetch_jobs, update_job_details
 from asset_processing_service.config import Config
