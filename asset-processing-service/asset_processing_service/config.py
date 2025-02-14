@@ -16,6 +16,9 @@ class Config:
     STUCK_JOB_THRESHOLD_SECONDS = int(os.getenv("STUCK_JOB_THRESHOLD_SECONDS", 30))
     MAX_JOB_ATTEMPTS = int(os.getenv("MAX_JOB_ATTEMPTS", 3))
     MAX_NUM_WORKERS = int(os.getenv("MAX_NUM_WORKERS", 2))
+    HEARTBEAT_INTERVAL_SECONDS = int(os.getenv("HEARTBEAT_INTERVAL_SECONDS", 10))
+    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "whisper-1")
+    OPENAI_API_KEY = get_required_env("OPENAI_API_KEY")
     
 config = Config()
 
