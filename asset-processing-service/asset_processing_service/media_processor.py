@@ -1,6 +1,4 @@
 
-
-
 import asyncio
 from asyncio.log import logger
 import os
@@ -11,6 +9,7 @@ import uuid
 from asset_processing_service.config import Config
 import ffmpeg
 import openai
+from asset_processing_service.logger import logger
 async def split_audio_file(audio_buffer: bytes, max_chunk_size_bytes: int, original_file_name: str):
     file_name_without_ext, file_extension = os.path.splitext(original_file_name)
     chunks = []
@@ -20,10 +19,10 @@ async def split_audio_file(audio_buffer: bytes, max_chunk_size_bytes: int, origi
         with open(temp_input_path, "wb") as f:
             f.write(audio_buffer)
         if file_extension.lower() == ".mp3":
-            print("Input audio is already in MP3 format. Skipping conversion.")
+            logger.info("Input audio is already in MP3 format. Skipping conversion.")
             temp_mp3_path = temp_input_path
         else:
-            print("Converting input audio to MP3 format.")
+            logger.info("Converting input audio to MP3 format.")
             temp_mp3_path = os.path.join(temp_dir, f"{file_name_without_ext}_converted.mp3")
             await convert_audio_to_mp3(temp_input_path, temp_mp3_path)
             
@@ -34,9 +33,9 @@ async def split_audio_file(audio_buffer: bytes, max_chunk_size_bytes: int, origi
         num_chunks = max(1, int((total_size + max_chunk_size_bytes - 1) / max_chunk_size_bytes))
         chunk_duration = duration / num_chunks
         
-        print("Total size: ", total_size)
-        print("Duration: ", duration)
-        print(f"Number of chunks: {num_chunks} of {chunk_duration} seconds each")
+        logger.info("Total size: ", total_size)
+        logger.info("Duration: ", duration)
+        logger.info(f"Number of chunks: {num_chunks} of {chunk_duration} seconds each")
         
         output_pattern = os.path.join(temp_dir, f"{file_name_without_ext}_chunk_%03d.mp3")
         split_cmd = ffmpeg.input(temp_mp3_path).output(output_pattern, format="segment", segment_time=chunk_duration, c="copy", reset_timestamps=1)
@@ -65,13 +64,13 @@ async def split_audio_file(audio_buffer: bytes, max_chunk_size_bytes: int, origi
                     }
                 )
             else:
-                print(f"Chunk {chunk_file_name} exceeds the maximum chunk size after splitting..")
+                logger.error(f"Chunk {chunk_file_name} exceeds the maximum chunk size after splitting..")
                 raise ValueError(f"Chunk {chunk_file_name} exceeds the maximum chunk size after splitting..")
         return chunks
                 
         
     except Exception as e:
-        print(f"Error splitting audio file: {e}")
+        logger.error(f"Error splitting audio file: {e}")
         raise e
     finally:
         # Clean up temp files
@@ -130,7 +129,7 @@ async def extract_audio_and_split(video_buffer: bytes, max_chunk_size_bytes: int
         return chunks
         
     except Exception as e:
-        print(f"Error extracting audio and splitting video: {e}")
+        logger.error(f"Error extracting audio and splitting video: {e}")
         raise e
     finally:
         # Clean up temp files
@@ -152,19 +151,19 @@ async def transcribe_chunks(chunks: List[dict]) -> List[str]:
     """
     async def transcribe_chunk(index: int, chunk: dict) -> dict:
         try:
-            print(f"Transcribing chunk {index}: {chunk['file_name']}")
+            logger.info(f"Transcribing chunk {index}: {chunk['file_name']}")
             temp_file_path = os.path.join(os.getcwd(), "temp", chunk["file_name"])
             os.makedirs(os.path.dirname(temp_file_path), exist_ok=True)
             
             with open(temp_file_path, "wb") as f:
                 f.write(chunk["data"])
-            print(f"Chunk {index} written to temporary file: {temp_file_path}")
+            logger.info(f"Chunk {index} written to temporary file: {temp_file_path}")
             
             with open(temp_file_path, "rb") as audio_file:
                 transcription = await openai.Audio.atranscribe(
                     model=Config.OPENAI_MODEL, file=audio_file
                 )
-            print(f"Transcription for chunk {index}: {transcription.text}")
+                logger.info(f"Transcription for chunk {index}: {transcription.text}")
             if os.path.exists(temp_file_path):
                 os.remove(temp_file_path)
             return {
@@ -173,15 +172,15 @@ async def transcribe_chunks(chunks: List[dict]) -> List[str]:
             }              
                     
         except Exception as e:
-            print(f"Error transcribing chunk {index}: {e}")
+            logger.error(f"Error transcribing chunk {index}: {e}")
             raise e
     
-    print(f"Starting transcription of audio chunks...")
+    logger.info(f"Starting transcription of audio chunks...")
     tasks = [transcribe_chunk(index, chunk) for index, chunk in enumerate(chunks)]
     transcribed_chunks = await asyncio.gather(*tasks)
-    print(f"Transcription complete.")
+    logger.info(f"Transcription complete.")
     transcribed_chunks.sort(key=lambda x: x["index"])
     
     transcribed_texts = [chunk["content"] for chunk in transcribed_chunks]
-    print(f"Transcribed content extracted from transcribed chunks.")
+    logger.info(f"Transcribed content extracted from transcribed chunks.")
     return transcribed_texts

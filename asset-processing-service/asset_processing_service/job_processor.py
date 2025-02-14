@@ -6,9 +6,10 @@ from asset_processing_service.api_client import fetch_asset, fetch_asset_file, u
 from asset_processing_service.media_processor import extract_audio_and_split, split_audio_file, transcribe_chunks
 from asset_processing_service.models import AssetProcessingJob
 from asset_processing_service.config import Config
+from asset_processing_service.logger import logger
 
-async def process_job(job: AssetProcessingJob):
-    print(f"Processing job: {job.id}")
+async def process_job(job: AssetProcessingJob): 
+    logger.info(f"Processing job: {job.id}")
     heartbeat_task = asyncio.create_task(heartbeat_updater(job.id))
     
     try:
@@ -21,20 +22,20 @@ async def process_job(job: AssetProcessingJob):
         content_type = "images"
         content_type = ""
         if content_type == ["text", "markdown"]:
-            print(f"Text file detected. Reading content of {asset.fileName}")
+            logger.info(f"Text file detected. Reading content of {asset.fileName}")
             content = file_buffer.decode("utf-8")
         elif content_type == "audio":
-            print("Processing audio file...")
+            logger.info("Processing audio file...")
             chunks = await split_audio_file(
                 file_buffer,
                 Config.MAX_CHUNK_SIZE_BYTES,
                 os.path.basename(asset.fileName)
             )
-            transcribed_chunks = await transcribe_chunks(chunks)
+            transcribed_chunks = await transcribe_chunks(chunks)    
             content = "\n".join(transcribed_chunks)
             
         elif content_type == "video":
-            print("Processing video file...")
+            logger.info("Processing video file...")
             chunks = await extract_audio_and_split(
                 file_buffer,
                 Config.MAX_CHUNK_SIZE_BYTES,
@@ -49,7 +50,7 @@ async def process_job(job: AssetProcessingJob):
         await update_asset_content(asset.id, content)
         await update_job_details(job.id, {"status": "completed"})
     except Exception as e:
-        print(f"Error processing job {job.id}: {e}")
+        logger.error(f"Error processing job {job.id}: {e}")
         error_message = str(e)
         await update_job_details(job.id, {"status": "failed", "error": error_message})
         
@@ -70,7 +71,7 @@ async def heartbeat_updater(job_id: str):
         except asyncio.CancelledError:
             break
         except Exception as e:
-            print(f"Error updating heartbeat for job {job_id}: {e}")
+            logger.error(f"Error updating heartbeat for job {job_id}: {e}")
             break
             
         

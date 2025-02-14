@@ -1,11 +1,11 @@
-
-from asyncio.log import logger
+from asset_processing_service.logger import logger
 from datetime import datetime
 from typing import Any, Dict, Optional
 import aiohttp
 from asset_processing_service.config import HEADERS, config
 from asset_processing_service.models import Asset, AssetProcessingJob
 import tiktoken
+
 
 
 class ApiError(Exception):
@@ -25,10 +25,10 @@ async def fetch_jobs() -> list[AssetProcessingJob]:
                     jobs = [AssetProcessingJob(**item) for item in data]
                     return jobs
                 else:
-                    print("Error fetching jobs: ", response.status)
+                    logger.error(f"Error fetching jobs: {response.status}")
                     return []
     except aiohttp.ClientError as error:
-        print(f"Error fetching jobs: {error}")
+        logger.error(f"Error fetching jobs: {error}")
         return []
     
 
@@ -40,7 +40,7 @@ async def update_job_details(job_id: str, update_data: Dict[str, Any]) -> None:
             async with session.patch(url, headers=HEADERS, json=data) as response:
                 response.raise_for_status()
     except aiohttp.ClientError as error:
-        print(f"Error updating job details for job {job_id}: {error}")
+        logger.error(f"Error updating job details for job {job_id}: {error}")
         
         
 async def update_job_heartbeat(job_id: str) -> None:
@@ -51,8 +51,7 @@ async def update_job_heartbeat(job_id: str) -> None:
             async with session.patch(url, headers=HEADERS, json=data) as response:
                 response.raise_for_status()
     except aiohttp.ClientError as error:
-        print(f"Error updating job heartbeat for job {job_id}: {error}")
-        # logger.error(f"Error updating job details for job {job_id}: {error}")
+        logger.error(f"Error updating job heartbeat for job {job_id}: {error}")
                     
                     
 async def fetch_asset(asset_id: str) -> Optional[Asset]:
@@ -68,11 +67,11 @@ async def fetch_asset(asset_id: str) -> Optional[Asset]:
                     else:
                         return None
                 else:
-                    print("Error fetching asset: ", response.status)
+                    logger.error(f"Error fetching asset: {response.status}")
                     return None
                 
     except aiohttp.ClientError as error:
-        print(f"Error fetching jobs: {error}")
+        logger.error(f"Error fetching jobs: {error}")
         return []
     
 async def fetch_asset_file(file_url: str) -> bytes:
@@ -82,7 +81,7 @@ async def fetch_asset_file(file_url: str) -> bytes:
                 response.raise_for_status()
                 return await response.read()
     except aiohttp.ClientError as error:
-        print(f"Error fetching asset file: {error}")
+        logger.error(f"Error fetching asset file: {error}")
         raise ApiError("Error fetching asset file", status_code=500)
     
 async def update_asset_content(asset_id: str, content: str) -> None:
@@ -103,5 +102,5 @@ async def update_asset_content(asset_id: str, content: str) -> None:
                 response.raise_for_status()
                 
     except aiohttp.ClientError as error:
-        print(f"Error updating asset content for asset {asset_id}: {error}")
+        logger.error(f"Error updating asset content for asset {asset_id}: {error}")
         raise ApiError("Error updating asset content", status_code=500)
