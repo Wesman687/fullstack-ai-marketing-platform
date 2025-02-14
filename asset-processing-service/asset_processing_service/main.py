@@ -3,6 +3,7 @@ from collections import defaultdict
 from time import sleep
 from asset_processing_service.api_client import fetch_jobs, update_job_details
 from asset_processing_service.config import Config
+from asset_processing_service.job_processor import process_job
 from asset_processing_service.logger import logger
 
 
@@ -65,8 +66,7 @@ async def worker(
             async with job_locks[job.id]:
                 logger.info(f"Worker {worker_id} processing job: {job.id}")
                 try:
-                    # TODO: await process_job(job)
-                    await update_job_details(job.id, {"status": "completed"})
+                    await process_job(job)
                 except Exception as e:
                     logger.error(f"Worker {worker_id} failed to process job {job.id}: {e}")
                     await update_job_details(

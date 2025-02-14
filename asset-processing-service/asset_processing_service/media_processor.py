@@ -8,7 +8,7 @@ from typing import List
 import uuid
 from asset_processing_service.config import Config
 import ffmpeg
-import openai
+from openai import OpenAI
 from asset_processing_service.logger import logger
 async def split_audio_file(audio_buffer: bytes, max_chunk_size_bytes: int, original_file_name: str):
     file_name_without_ext, file_extension = os.path.splitext(original_file_name)
@@ -160,7 +160,8 @@ async def transcribe_chunks(chunks: List[dict]) -> List[str]:
             logger.info(f"Chunk {index} written to temporary file: {temp_file_path}")
             
             with open(temp_file_path, "rb") as audio_file:
-                transcription = await openai.Audio.atranscribe(
+                client = OpenAI(api_key=Config.OPENAI_API_KEY)
+                transcription = client.audio.transcriptions.create(
                     model=Config.OPENAI_MODEL, file=audio_file
                 )
                 logger.info(f"Transcription for chunk {index}: {transcription.text}")
@@ -168,7 +169,7 @@ async def transcribe_chunks(chunks: List[dict]) -> List[str]:
                 os.remove(temp_file_path)
             return {
                 "index": index,
-                "content": transcription["text"],
+                "content": transcription.text,
             }              
                     
         except Exception as e:

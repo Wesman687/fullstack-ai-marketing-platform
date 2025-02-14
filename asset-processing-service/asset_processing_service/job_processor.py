@@ -19,8 +19,8 @@ async def process_job(job: AssetProcessingJob):
             raise ValueError(f"Asset not found for job {job.asset_id}")        
         file_buffer = await fetch_asset_file(asset.fileUrl)
         
-        content_type = "images"
-        content_type = ""
+        content_type =  asset.fileType
+        
         if content_type == ["text", "markdown"]:
             logger.info(f"Text file detected. Reading content of {asset.fileName}")
             content = file_buffer.decode("utf-8")
