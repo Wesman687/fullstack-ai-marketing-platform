@@ -17,6 +17,7 @@ class Config:
     MAX_JOB_ATTEMPTS = int(os.getenv("MAX_JOB_ATTEMPTS", 3))
     MAX_NUM_WORKERS = int(os.getenv("MAX_NUM_WORKERS", 2))
     HEARTBEAT_INTERVAL_SECONDS = int(os.getenv("HEARTBEAT_INTERVAL_SECONDS", 10))
+    MAX_CHUNK_SIZE_BYTES = int(os.getenv("MAX_CHUNK_SIZE_BYTES", str(24 * 1024 * 1024)))
     OPENAI_MODEL = os.getenv("OPENAI_MODEL", "whisper-1")
     OPENAI_API_KEY = get_required_env("OPENAI_API_KEY")
     
