@@ -8,6 +8,7 @@ const isPublicRoute = createRouteMatcher([
 ])
 const isSecureRoute = createRouteMatcher([
   "/api/asset-processing-job",
+  "/api/asset",
 ])
 
 const SERVER_API_KEY = process.env.SERVER_API_KEY;
