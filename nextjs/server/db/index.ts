@@ -12,7 +12,7 @@ const pool = mysql.createPool({
   database: DGO_DATABASE,
   port: Number(DGO_PORT),
   waitForConnections: true,
-  connectionLimit: 5,  // ✅ Prevents too many connections
+  connectionLimit: 10,  // ✅ Prevents too many connections
   queueLimit: 0,       // ✅ Prevents excessive queuing
   connectTimeout: 10000, // ✅ Prevents long waiting times
   multipleStatements: false, // ✅ Avoids SQL injection risks
@@ -29,16 +29,3 @@ export async function db() {
     }
   };
 }
-setInterval(async () => {
-  try {
-    const connection = await pool.getConnection();
-    await connection.ping();
-    connection.release();
-
-    // ✅ Forcefully remove any stuck idle connections
-    await pool.query("SELECT 1");
-
-  } catch (error) {
-    console.error("❌ Keep-alive ping failed:", error);
-  }
-}, 300000); // Every 5 minutes

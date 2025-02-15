@@ -26,27 +26,34 @@ export async function PATCH(request: NextRequest) {
 
     const { title } = validateData.data
     console.log(projectId)
+    const database = await db();
+    try {
+        // ✅ Await db() to get the instance
 
-    const database = await db(); // ✅ Await db() to get the instance
+        const [result] = await database.drizzle
+            .update(projectsTable)
+            .set({ title })
+            .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
 
-    const [result] = await database.drizzle
-        .update(projectsTable)
-        .set({ title })
-        .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
+        // ✅ Check if any rows were affected (for MySQL)
+        if (!result || result.affectedRows === 0) {
+            return NextResponse.json({ error: "Project not found or unauthorized" }, { status: 404 });
+        }
 
-    // ✅ Check if any rows were affected (for MySQL)
-    if (!result || result.affectedRows === 0) {
-        return NextResponse.json({ error: "Project not found or unauthorized" }, { status: 404 });
+
+        // ✅ Fetch the updated project manually
+        const [updatedProject] = await database.drizzle
+            .select()
+            .from(projectsTable)
+            .where(eq(projectsTable.id, projectId));
+        return NextResponse.json({ message: "Project updated successfully", project: updatedProject }, { status: 200 });
+    } catch (error) {
+        console.error("❌ Error updating project:", error);
+        return NextResponse.json({ error: "Failed to update project" }, { status: 500 });
+    } finally {
+
+        database.release();
     }
-
-
-    // ✅ Fetch the updated project manually
-    const [updatedProject] = await database.drizzle
-        .select()
-        .from(projectsTable)
-        .where(eq(projectsTable.id, projectId));
-    database.release();
-    return NextResponse.json({ message: "Project updated successfully", project: updatedProject }, { status: 200 });
 }
 
 export async function DELETE(request: NextRequest) {
@@ -58,20 +65,26 @@ export async function DELETE(request: NextRequest) {
 
     const database = await db(); // ✅ Await db() to get the instance
 
-    const [result] = await database.drizzle
-        .delete(projectsTable)
-        .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
-        
-    const [result2] = await database.drizzle
-        .delete(assetProcessingJobTable)
-        .where(eq(assetProcessingJobTable.projectId, projectId));
-    database.release();
-    // ✅ Check if any rows were affected (for MySQL)
-    if (!result || !result2 || result.affectedRows === 0) {
-        return NextResponse.json({ error: "Project not found or unauthorized" }, { status: 404 });
-    }
+    try {
+        const [result] = await database.drizzle
+            .delete(projectsTable)
+            .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
 
-    return NextResponse.json({ message: "Project deleted successfully" }, { status: 200 });
+        const [result2] = await database.drizzle
+            .delete(assetProcessingJobTable)
+            .where(eq(assetProcessingJobTable.projectId, projectId));
+        // ✅ Check if any rows were affected (for MySQL)
+        if (!result || !result2 || result.affectedRows === 0) {
+            return NextResponse.json({ error: "Project not found or unauthorized" }, { status: 404 });
+        }
+
+        return NextResponse.json({ message: "Project deleted successfully" }, { status: 200 });
+    } catch (error) {
+        console.error("❌ Error deleting project:", error);
+        return NextResponse.json({ error: "Failed to delete project" }, { status: 500 });
+    } finally {
+        database.release();
+    }
 }
 
 

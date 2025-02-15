@@ -6,8 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
     const { userId } = getAuth(request);
-    if (!userId) { 
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 }); 
+    if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // ✅ Extract `projectId` directly from the URL
@@ -19,20 +19,22 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Invalid Project ID" }, { status: 400 });
     }
 
+    const database = await db();
 
     try {
-        const database = await db(); // ✅ Await db() to get the instance
+
 
         const assets = await database.drizzle
             .select()
             .from(assetProcessingJobTable)
             .where(eq(assetProcessingJobTable.projectId, projectId));
-        
-        database.release();
-        return NextResponse.json(assets , { status: 200 });
+
+        return NextResponse.json(assets, { status: 200 });
 
     } catch (error) {
         console.error("❌ Error fetching assets:", error);
         return NextResponse.json({ error: "Assets not found or unauthorized" }, { status: 404 });
+    } finally {
+        database.release();
     }
 }

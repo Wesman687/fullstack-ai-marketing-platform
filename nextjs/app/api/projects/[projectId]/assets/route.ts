@@ -14,20 +14,21 @@ export async function GET(request: NextRequest) {
     const pathSegments = url.pathname.split("/");
     const projectId = pathSegments[3]; // Assuming `/api/projects/[projectId]/asset-processing-jobs`
 
-
+     
+    const database = await db();
     try {
-        const database = await db(); // ✅ Await db() to get the instance
 
         const assets = await database.drizzle
             .select()
             .from(assetTable)
             .where(and(eq(assetTable.projectId, projectId)));
         
-        database.release();
         return NextResponse.json({ assets }, { status: 200 });
     } catch (error) {
         console.log(error)
         return NextResponse.json({ error: "Assets not found or unauthorized" }, { status: 404 });
+    } finally {
+        database.release();
     }
 
 }
@@ -49,9 +50,9 @@ export async function DELETE(request: NextRequest) {
     if (!assetId) {
         return NextResponse.json({ error: "Asset ID is required" }, { status: 400 });
     }
+    const database = await db();
 
     try {
-        const database = await db(); // ✅ Await db() to get the instance
 
         const asset = await database.drizzle
             .select()
@@ -64,13 +65,14 @@ export async function DELETE(request: NextRequest) {
         await database.drizzle.delete(assetTable).where(and(eq(assetTable.projectId, projectId), eq(assetTable.id, assetId!)));
         await del(asset[0].fileUrl);
 
-        database.release();
         return NextResponse.json({ success: true }, { status: 200 });
 
     } catch (error) {
 
         console.log(error)
         return NextResponse.json({ error: "Failed to delete asset" }, { status: 500 });
+    } finally {
+        database.release();
     }
 }
 

@@ -18,18 +18,19 @@ export async function GET(request: Request){
         return NextResponse.json({ error: "Asset ID is required" }, { status: 400 });
     }
 
+    const database = await db();
     try {
-        const database = await db();
         const asset = await database.drizzle.select().from(assetTable)
         .where(eq(assetTable.id, assetId)).execute();
         if (asset.length === 0) {
             return NextResponse.json({ error: "Asset not found" }, { status: 404 });
         }
-        database.release();
         return NextResponse.json( asset[0] , { status: 200 });
     } catch (error) {
         console.error("❌ Error fetching asset:", error);
         return NextResponse.json({ error: "Failed to fetch asset" }, { status: 500 });
+    } finally {
+        database.release();
     }
 }
 
@@ -49,9 +50,9 @@ export async function PATCH(request: Request){
     }
     
     const { content, tokenCount } = updateAsset.data;
+    const database = await db();
     
     try {
-        const database = await db();
         const asset = await database.drizzle.select().from(assetTable)
         .where(eq(assetTable.id, assetId)).execute();
         
@@ -62,13 +63,14 @@ export async function PATCH(request: Request){
         .set({ content, tokenCount })
         .where(eq(assetTable.id, assetId)).execute();
         
-        database.release();
         console.log("✅ Asset content updated successfully");
         return NextResponse.json({ message: "Asset content updated successfully" }, { status: 200 });
         
     } catch (error) {
         console.error("❌ Error updating asset content:", error);
         return NextResponse.json({ error: "Failed to update asset content" }, { status: 500 });
+    } finally {
+        database.release();
     }
     
     

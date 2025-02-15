@@ -12,9 +12,10 @@ const updateAssetJobSchema = z.object({
 })
 
 export async function GET(){
+    const database = await db();
 
     try {
-        const database = await db();
+
         const jobs = await database.drizzle.select().from(assetProcessingJobTable)
         .where(inArray(assetProcessingJobTable.status,[
             //non terminal states
@@ -22,15 +23,17 @@ export async function GET(){
             "failed",
             "in_progress",
         ])).execute();
-        database.release();
         return NextResponse.json( jobs , { status: 200 });
     } catch (error) {
         console.error("❌ Error fetching jobs:", error);
         return NextResponse.json({ error: "Failed to fetch jobs" }, { status: 500 });
+    } finally {
+        database.release();
     }
 }
 
 export async function PATCH(request: Request) {
+    const database = await db();
     try {
         const body = await request.text(); 
 
@@ -53,8 +56,6 @@ export async function PATCH(request: Request) {
             return NextResponse.json({ error: "Job ID is required" }, { status: 400 });
         }
 
-        // ✅ Get database instance
-        const database = await db();
 
         // ✅ Perform the update query
         await database.drizzle.update(assetProcessingJobTable)
@@ -75,12 +76,13 @@ export async function PATCH(request: Request) {
             .where(eq(assetProcessingJobTable.id, jobId))
             .execute();
 
-        database.release();
 
         return NextResponse.json({ success: true, updatedJob }, { status: 200 });
 
     } catch (error) {
         console.error("❌ Error updating job:", error);
         return NextResponse.json({ error: "Failed to update job" }, { status: 500 });
+    } finally {
+        database.release();
     }
 }

@@ -1,3 +1,4 @@
+import { uuidv4 } from '@/lib/utils';
 import { db } from '@/server/db';
 import { assetProcessingJobTable, assetTable } from '@/server/db/schema/schema';
 import { auth } from '@clerk/nextjs/server';
@@ -7,6 +8,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request): Promise<NextResponse> {
   const body = (await request.json()) as HandleUploadBody;
+  const database = await db();
   try {
     const jsonResponse = await handleUpload({
       body,
@@ -32,12 +34,8 @@ export async function POST(request: Request): Promise<NextResponse> {
         };
       },
       onUploadCompleted: async ({ blob, tokenPayload }) => {
-        // Get notified of client upload completion
-        // ⚠️ This will not work on `localhost` websites,
-        // Use ngrok or similar to get the full upload flow
         if (!tokenPayload) return;
         const { projectId, file: fileType, mimeType, size } = JSON.parse(tokenPayload);
-        const database = await db();
         try {
           const assetId = uuidv4();  // ✅ Generate UUID before inserting
 
@@ -59,7 +57,6 @@ export async function POST(request: Request): Promise<NextResponse> {
             status: 'created',
           });
           
-        database.release();
         } catch (error) {
           throw new Error('Could not save asset or asset processing job to database');
           console.log(error)
@@ -73,13 +70,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       { error: (error as Error).message },
       { status: 400 }, // The webhook will retry 5 times waiting for a 200
     );
+  } finally {
+    database.release();
   }
 }
 
-function uuidv4(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}
+

@@ -59,9 +59,75 @@ export const assetProcessingJobTable = mysqlTable("asset_processing_jobs", {
   updatedAt: timestamp("updated_at").defaultNow().notNull().onUpdateNow(),
 });
 
+export const promptsTable = mysqlTable("prompts", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .notNull()
+    .default(sql`(UUID())`),
+  projectId: varchar("project_id", { length: 36 })
+    .notNull()
+    .references(() => projectsTable.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  prompt: text("prompt").notNull(),
+  tokenCount: int("token_count").notNull().default(0),
+  order: int("order").notNull().default(0),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp("updated_at")
+    .default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+export const templatesTable = mysqlTable("templates", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .notNull()
+    .default(sql`(UUID())`),
+   userId: varchar("user_id", { length: 50 }).notNull(),
+   title: text("title").notNull(),
+   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`).notNull().defaultNow().onUpdateNow(),
+});
+
+export const templatePromptsTable = mysqlTable("template_prompts", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .notNull()
+    .default(sql`(UUID())`),
+  templateId: varchar("template_id", { length: 36 })
+    .notNull()
+    .references(() => templatesTable.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  prompt: text("prompt").notNull(),
+  tokenCount: int("token_count").notNull().default(0),
+  order: int("order").notNull().default(0),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`).notNull().defaultNow().onUpdateNow(),
+});
+
+
+export const templatePromptRelations = relations(templatePromptsTable, ({ one }) => ({
+  template: one(templatesTable, {
+    fields: [templatePromptsTable.templateId],
+    references: [templatesTable.id],
+  }),
+}));
+
+
+export const templateRelations = relations(templatesTable, ({ many }) => ({
+  templatePrompts: many(templatePromptsTable),
+}));
+
+export const promptRelations = relations(promptsTable, ({ one }) => ({
+  project: one(projectsTable, {
+    fields: [promptsTable.projectId],
+    references: [projectsTable.id],
+  }),
+}));
+
 // ✅ Relations (MySQL Version)
 export const projectsRelations = relations(projectsTable, ({ many }) => ({
   assets: many(assetTable),
+  prompts: many(promptsTable),
 }));
 
 export const assetRelations = relations(assetTable, ({ one }) => ({
@@ -93,3 +159,9 @@ export type InsertAsset = typeof assetTable.$inferInsert;
 export type AssetProcessingJob = typeof assetProcessingJobTable.$inferSelect;
 export type InsertAssetProcessingJob =
   typeof assetProcessingJobTable.$inferInsert;
+export type Prompt = typeof promptsTable.$inferSelect;
+export type InsertPrompt = typeof promptsTable.$inferInsert;
+export type Template = typeof templatesTable.$inferSelect;
+export type InsertTemplate = typeof templatesTable.$inferInsert;
+export type TemplatePrompt = typeof templatePromptsTable.$inferSelect;
+export type InsertTemplatePrompt = typeof templatePromptsTable.$inferInsert;
