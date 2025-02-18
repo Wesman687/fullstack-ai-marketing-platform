@@ -81,11 +81,8 @@ export default function GenerateImage() {
           "Content-Type": "multipart/form-data", // ✅ Required for file uploads
         },
       });
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_IMAGE_GEN}/image/${userId}`);
-      if (response.data.image_url) {
-        setImagePath(response.data.image_url);
-        setIsModalOpen(true); // ✅ Open modal after image is generated
-      }
+      toggleImageGallery()
+      toast.success("Image uploaded successfully!");
     } catch (error) {
       console.error("Upload failed:", error);
     } finally {
@@ -134,6 +131,10 @@ export default function GenerateImage() {
           "Accept": "image/*",
         },// Set timeout to 60 seconds (60000 milliseconds)
       });
+      if (response.data.image_url) {
+        setImagePath(response.data.image_url);
+        setIsModalOpen(true); // ✅ Open modal after image is generated
+      }
 
       if (response.data.image_url) {
         setImagePath(response.data.image_url);

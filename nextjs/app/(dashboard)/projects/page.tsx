@@ -53,33 +53,6 @@ export default function Projects() {
         </div>
         <ProjectList projects={projects} />
       </div>
-      <div
-  className="max-w-screen-2xl w-fit border-2 border-black border-dashed rounded-lg mx-auto p-4 sm:p-6 md:p-8 lg:p-12 mt-2 space-y-6 sm:space-y-8 lg:space-y-10"
-  style={{
-    animation: 'dash 2s linear infinite',
-    backgroundImage: 'linear-gradient(90deg, rgba(255,255,0,0.5) 50%, rgba(255,255,0,1) 50%)',
-    backgroundSize: '50px 100%',
-  }}
->
-  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6">
-    <h1 className="text-2xl sm:text-3xl text-black lg:text-4xl font-bold animate-pulse">
-      Currently Under Construction  
-    </h1>
-  </div>
-</div>
-
-
-<style jsx>{`
-  @keyframes dash {
-    0% {
-      background-position: 0% 0;
-    }
-    100% {
-      background-position: 100% 0;
-    }
-  }
-`}</style>
-
     </div>
   )
 }
