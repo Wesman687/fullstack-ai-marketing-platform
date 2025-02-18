@@ -59,5 +59,6 @@ export  const aspectRatios: AspectRatioProps[] = [
       url: string;
       id: string;
       action: string;
-      favorite: boolean;  // ✅ Added action field for filtering
+      favorite: boolean;
+      sort_order: number  // ✅ Added action field for filtering
   }

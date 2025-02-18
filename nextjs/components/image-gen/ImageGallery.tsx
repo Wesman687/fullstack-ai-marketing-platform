@@ -28,9 +28,14 @@ interface ImageGalleryProps {
     selectedImage: string | null;
     setSelectedImage: (url: string) => void;
 }
+interface SortableImageProps {
+    item: ImageResponse; // ✅ Use the correct type for image items
+    selectedImage: string | null;
+    setSelectedImage: (url: string) => void;
+}
 
 // ✅ Sortable Image Component
-const SortableImage = ({ item, selectedImage, setSelectedImage }: any) => {
+const SortableImage: React.FC<SortableImageProps> = ({ item, selectedImage, setSelectedImage }) => {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id.toString() });
 
     const style = {
@@ -76,14 +81,16 @@ export default function ImageGallery({ userId, images, setImages, selectedImage,
     const fetchImages = async () => {
         try {
             const response = await axios.get(`${process.env.NEXT_PUBLIC_API_IMAGE_GEN}/image/${userId}`);
-            setImages(response.data.images);
+            const sortedImages = response.data.images.sort((a: ImageResponse, b: ImageResponse) => a.sort_order - b.sort_order);
+            setImages(sortedImages);
+
         } catch (error) {
             console.error("Error fetching images:", error);
         } finally {
             setLoading(false);
         }
     };
-
+    console.log(images)
     useEffect(() => {
         if (userId) fetchImages();
     }, [userId]);
@@ -92,17 +99,31 @@ export default function ImageGallery({ userId, images, setImages, selectedImage,
     const sensors = useSensors(useSensor(PointerSensor), useSensor(TouchSensor));
 
     // ✅ Handle Drag and Drop Sorting
-    const handleDragEnd = (event: DragEndEvent) => {
+    const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
-
+    
+        // ✅ Reorder images locally
         const oldIndex = images.findIndex((img) => img.id.toString() === active.id.toString());
         const newIndex = images.findIndex((img) => img.id.toString() === over.id.toString());
-
         const newImages = arrayMove(images, oldIndex, newIndex);
-        setImages(newImages);
+    
+        setImages(newImages); // ✅ Update UI immediately
         toast.success("Image order updated!");
+    
+        // ✅ Save new order to MySQL
+        try {
+            await axios.put(`${process.env.NEXT_PUBLIC_API_IMAGE_GEN}/image/update-order`, {
+                userId,
+                images: newImages.map((img, index) => ({ id: img.id, order: index })),
+            });
+            toast.success("Order saved!");
+        } catch (error) {
+            console.error("Failed to save order:", error);
+            toast.error("Failed to save order.");
+        }
     };
+    
 
     // ✅ Apply filter to images
     const filteredImages = images
@@ -114,7 +135,6 @@ export default function ImageGallery({ userId, images, setImages, selectedImage,
         })
         .sort((a, b) => Number(b.favorite) - Number(a.favorite));
 
-    console.log("Filtered Images:", filteredImages); // ✅ Debugging
 
     return (
         <>
