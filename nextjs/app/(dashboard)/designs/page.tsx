@@ -120,7 +120,7 @@ export default function GenerateImage() {
         formData.append("file", file); // ✅ Attach file to FormData
       }
 
-      const response = await axios.post("http://api.paul-miracle.info:5000/image/generate", formData, {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_IMAGE_GEN}/image/generate`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           "Accept": "image/*",
