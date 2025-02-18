@@ -1,11 +1,15 @@
 import TemplateDetailView from '@/components/template/TemplateDetailView';
 import { getTemplate } from '@/server/db/queries'
 import { notFound } from 'next/navigation';
-import React from 'react'
+import React, { use } from 'react'
 
-export default async function TemplatePage({ params }: { params: { templateId: string } }) {
-  const { templateId } = params; // ✅ No need to await
-  const template = await getTemplate(templateId);
+interface TemplatePageProps {
+  params: Promise<{ templateId: string }>
+}
+
+export default  function TemplatePage({ params }: TemplatePageProps) {
+  const { templateId } = use(params); // ✅ No need to await
+  const template = use(getTemplate(templateId));
 
   if (!template) {
     return notFound();

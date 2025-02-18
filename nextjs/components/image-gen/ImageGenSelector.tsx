@@ -69,6 +69,7 @@ function ImageGenSelector({ model, setModel, aspectRatio, setAspectRatio, style,
                     ))}
                 </select>
             </div>
+            
 
             {/* Format Selection */}
             <div className="mt-2 flex items-center gap-3 justify-evenly w-full">
