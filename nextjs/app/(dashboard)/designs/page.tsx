@@ -111,13 +111,14 @@ export default function GenerateImage() {
       formData.append("seed", seed.toString());
       formData.append("action", model.action);
       formData.append("user_id", userId ?? "anonymous");
-      formData.append("strength", strength.toFixed(1));
+      
       if (selectedImage) {
         console.log("Fetching image from Spaces:", selectedImage);
         const response = await fetch(selectedImage); // Fetch image
         const blob = await response.blob(); // Convert to Blob
         const file = new File([blob], "selected-image.png", { type: blob.type }); // Create File object
         formData.append("file", file); // ✅ Attach file to FormData
+        formData.append("strength", strength.toFixed(1));
       }
 
       const response = await axios.post(`${process.env.NEXT_PUBLIC_API_IMAGE_GEN}/image/generate`, formData, {
