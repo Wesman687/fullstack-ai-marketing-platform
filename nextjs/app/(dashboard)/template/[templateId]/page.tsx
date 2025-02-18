@@ -3,10 +3,10 @@ import { getTemplate } from '@/server/db/queries'
 import { notFound } from 'next/navigation';
 import React from 'react'
 
-export default async function TemplatePage({params}: {params: {templateId: string}}) {
-  const {templateId} = await params;
-  const template = await getTemplate(templateId)
-  
+export default async function TemplatePage({ params }: { params: { templateId: string } }) {
+  const { templateId } = params; // ✅ No need to await
+  const template = await getTemplate(templateId);
+
   if (!template) {
     return notFound();
   }

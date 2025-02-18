@@ -107,7 +107,7 @@ function DisplayImage({ userId, setSelectedImage, selectedImage, setImages, imag
                     {filteredImages.map((item) => (
                         <div
                             key={item.id}
-                            className={`relative w-full h-[150px] cursor-pointer border-4 shadow-md ${selectedImage === item.url ? "border-blue-500 rounded-xl" : "border-transparent"
+                            className={`relative w-full h-[100px] cursor-pointer border-4 shadow-md ${selectedImage === item.url ? "border-blue-500 rounded-xl" : "border-transparent"
                                 }`}
                             onClick={() => handleSelectImage(item.url)}
                         >
