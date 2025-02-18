@@ -24,7 +24,6 @@ export default  function TemplatesPage() {
     const formData = new FormData(event.currentTarget);
 
     try {
-      setIsLoading(true);
       const response = await axios.post("/api/templatez", formData); 
       // Redirect after successful template creation
       router.push(`/template/${response.data.templateId}`); // Or however you access it
@@ -32,9 +31,7 @@ export default  function TemplatesPage() {
       // Handle errors (display message, etc.)
       console.error("Error creating template:", error);
       alert("Failed to create template. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+    } 
   };  
 
   return (
