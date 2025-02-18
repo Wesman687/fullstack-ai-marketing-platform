@@ -59,8 +59,7 @@ function ImageGallery({ userId, images, setImages, selectedImage, setSelectedIma
             console.error("Failed to download image:", error);
             toast.error("Download failed!");
         }
-    };
-    
+    };    
 
     useEffect(() => {
         if (userId) fetchImages();

@@ -3,7 +3,7 @@ import { promptsTable, templatePromptsTable } from "@/server/db/schema/schema";
 import { auth } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { NextApiRequest } from "next";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export const config = {
     api: {
@@ -13,7 +13,7 @@ export const config = {
   
 
 
-export async function POST(req: NextApiRequest) {
+export async function POST(req: NextRequest) {
     const { userId } = await auth()
     if (!userId) {
         return new Response("Unauthorized", { status: 401 });
