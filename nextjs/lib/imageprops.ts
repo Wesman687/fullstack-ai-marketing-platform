@@ -57,7 +57,7 @@ export  const aspectRatios: AspectRatioProps[] = [
   
   export interface ImageResponse {
       url: string;
-      id: string;
+      id: number;
       action: string;
       favorite: boolean;
       sort_order: number  // ✅ Added action field for filtering
