@@ -69,3 +69,17 @@ export const downloadImage = async (url: string) => {
     }
 };
 
+export const deleteImage = async (imageId: number, images: ImageResponse[], setImages: (images: ImageResponse[]) => void) => {
+    try {
+        await axios.delete(`${process.env.NEXT_PUBLIC_API_IMAGE_GEN}/image/delete/${imageId}`);
+
+        // ✅ Optimistically update UI by removing the image from the array
+        const updatedImages = images.filter(img => img.id !== imageId);
+        setImages(updatedImages);
+
+        toast.success("Image deleted successfully!");
+    } catch (error) {
+        console.error("❌ Failed to delete image:", error);
+        toast.error("Failed to delete image.");
+    }
+};

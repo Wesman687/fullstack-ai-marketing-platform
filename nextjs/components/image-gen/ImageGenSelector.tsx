@@ -1,5 +1,5 @@
 import { AspectRatioProps, aspectRatios, formats, ModelProps, models, styles } from '@/lib/imageprops'
-import { Menu } from 'lucide-react'
+import { Hourglass, Menu } from 'lucide-react'
 import React, { useState } from 'react'
 
 interface ImageGenSelectorProps {
@@ -69,7 +69,7 @@ function ImageGenSelector({ model, setModel, aspectRatio, setAspectRatio, style,
                     ))}
                 </select>
             </div>
-            
+
 
             {/* Format Selection */}
             <div className="mt-2 flex items-center gap-3 justify-evenly w-full">
@@ -186,9 +186,16 @@ function ImageGenSelector({ model, setModel, aspectRatio, setAspectRatio, style,
                 <button
                     onClick={generateImage}
                     disabled={loading}
-                    className="text-white bg-main hover:text-main text-xl hover:bg-red-50 rounded-full w-fit mt-4 px-8 py-3"
+                    className="text-white bg-main hover:text-main text-xl hover:bg-red-50 rounded-full w-fit mt-4 px-8 py-3 flex items-center gap-2"
                 >
-                    {loading ? "Generating..." : "Generate Image"}
+                    {loading ? (
+                        <>
+                            <Hourglass className="animate-pulse h-5 w-5 text-yellow-500" /> {/* ✅ Hourglass effect */}
+                            <span>Generating...</span>
+                        </>
+                    ) : (
+                        "Generate Image"
+                    )}
                 </button>
 
             </div>

@@ -4,6 +4,9 @@ import { ImageResponse } from "@/lib/imageprops";
 import axios from "axios";
 import { Download, Star } from "lucide-react";
 import toast from "react-hot-toast";
+import { Trash2 } from "lucide-react";
+import { deleteImage } from "@/app/utils/imageUtils";
+
 import {
     DndContext,
     closestCenter,
@@ -21,6 +24,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { downloadImage, toggleFavorite } from "@/app/utils/imageUtils";
 import { rectSortingStrategy, defaultAnimateLayoutChanges } from "@dnd-kit/sortable";
+import ConfirmationModal from "../ConfirmationModal";
 
 interface ImageGalleryProps {
     userId: string | null;
@@ -68,6 +72,15 @@ const SortableImage: React.FC<SortableImageProps> = ({ item, selectedImage, setS
             console.log("✅ Image Clicked:", item.id);
             setSelectedImage(item.url === selectedImage ? "" : item.url);
         }
+    };
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDeleteConfirm = async () => {
+        setIsDeleting(true);
+        await deleteImage(item.id, images, setImages);
+        setIsDeleting(false);
+        setIsDeleteModalOpen(false);
     };
 
     return (
@@ -119,6 +132,25 @@ const SortableImage: React.FC<SortableImageProps> = ({ item, selectedImage, setS
             >
                 <Download className="h-5 w-5" />
             </button>
+            <button
+                className="absolute bottom-2 left-2 p-2 bg-red-500/80 text-white rounded-full hover:bg-red-700 transition"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setIsDeleteModalOpen(true); // ✅ Open delete modal
+                }}
+            >
+                <Trash2 className="h-5 w-5" />
+            </button>
+
+            {/* ✅ Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={isDeleteModalOpen}
+                title="Delete Image?"
+                message="Are you sure you want to delete this image? This action cannot be undone."
+                isLoading={isDeleting}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleDeleteConfirm}
+            />
         </div>
     );
 };

@@ -7,6 +7,7 @@ import ImageGenSelector from "@/components/image-gen/ImageGenSelector";
 import { AspectRatioProps, aspectRatios, ImageResponse, ModelProps, models, styles } from "@/lib/imageprops";
 import toast from "react-hot-toast";
 import DisplayImage from "@/components/image-gen/DisplayImage";
+import ImagePreviewModal from "@/components/image-gen/ImagePreviewModal";
 
 export default function GenerateImage() {
   const [prompt, setPrompt] = useState<string>("");
@@ -30,6 +31,7 @@ export default function GenerateImage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [images, setImages] = useState<ImageResponse[]>([]);
   const [strength, setStrength] = useState<number>(0);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -80,7 +82,10 @@ export default function GenerateImage() {
         },
       });
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_IMAGE_GEN}/image/${userId}`);
-      setImages(response.data.images);
+      if (response.data.image_url) {
+        setImagePath(response.data.image_url);
+        setIsModalOpen(true); // ✅ Open modal after image is generated
+      }
     } catch (error) {
       console.error("Upload failed:", error);
     } finally {
@@ -90,6 +95,8 @@ export default function GenerateImage() {
     }
   };
   const generateImage = async () => {
+    setLoading(true);
+    setError(null);
     setImagePath(null);
     if (!prompt.trim()) {
       setError("Prompt cannot be empty.");
@@ -141,6 +148,8 @@ export default function GenerateImage() {
     } finally {
       setBrowserFiles([]);
       setSelectedImage(null);
+      setLoading(false);
+      setUploadingImage(false)
     }
   };
   useEffect(() => {
@@ -173,9 +182,7 @@ export default function GenerateImage() {
   };
   return (
     <div className="flex flex-col items-center p-6 text-white justify-center">
-      {loading ? (
-        <h1>Loading...</h1>
-      ) : (
+      
         <div className="w-full max-w-6xl bg-gray-200 rounded-xl p-6 text-gray-900 shadow-lg">
           <ImageGenSelector
             style={style}
@@ -257,7 +264,12 @@ export default function GenerateImage() {
             </div>
           )}
         </div>
-      )}
+        {/* ✅ Image Preview Modal */}
+      <ImagePreviewModal
+        isOpen={isModalOpen}
+        imageUrl={imagePath}
+        onClose={() => setIsModalOpen(false)} // ✅ Close modal on button click
+      />
     </div>
   );
 }
