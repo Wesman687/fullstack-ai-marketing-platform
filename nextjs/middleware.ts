@@ -4,7 +4,8 @@ import { NextResponse } from "next/server";
 const isPublicRoute = createRouteMatcher([
   "/",
   "/pricing",
-  "/api/upload"
+  "/api/upload",
+  "/api/user"
 ])
 const isSecureRoute = createRouteMatcher([
   "/api/asset-processing-job",
@@ -17,6 +18,9 @@ if (!SERVER_API_KEY) {
 }
 
 export default clerkMiddleware(async (auth, request) => {
+  if (request.url.startsWith("http://api.paul-miracle.info:5000")) {
+    return NextResponse.next();
+  }
 
   // Await the auth() to get the resolved value
   const user = await auth();

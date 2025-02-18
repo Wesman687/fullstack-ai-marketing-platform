@@ -102,6 +102,11 @@ function ManageUploadStep({ projectId }: ManageUploadStepProps) {
   
     return () => clearInterval(intervalId); // Cleanup on unmount
   }, []);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+          if (e.target.files) {
+              setBrowserFiles(Array.from(e.target.files));
+          }
+      }
 
   const handleUpload = async () => {
     setUploading(true)
@@ -159,6 +164,8 @@ function ManageUploadStep({ projectId }: ManageUploadStepProps) {
         browserFiles={browserFiles}
         setBrowserFiles={setBrowserFiles}
         inputFileRef={inputFileRef}
+        handleFileChange={handleFileChange}
+        accept=".video/*, .mp4, .txt,.md,video/*,audio/*,text/plain,text/markdown"
       />
       <UploadStepBody
         uploadedAssets={uploadedAssets}

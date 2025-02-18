@@ -1,6 +1,6 @@
 'use client'
 import React from 'react'
-import { Upload } from 'lucide-react'
+import { Upload, XCircle } from 'lucide-react'
 import { Button } from '../ui/button'
 
 interface UploadStepHeaderProps {
@@ -9,25 +9,20 @@ interface UploadStepHeaderProps {
     setBrowserFiles: React.Dispatch<React.SetStateAction<File[]>>
     inputFileRef: React.RefObject<HTMLInputElement | null>
     handleUpload: () => void
+    accept: string
+    handleFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void
 }
 
-function UploadStepHeader({ browserFiles, uploading, setBrowserFiles, inputFileRef, handleUpload }: UploadStepHeaderProps) {
+function UploadStepHeader({ browserFiles, uploading, setBrowserFiles, inputFileRef, handleUpload, accept, handleFileChange }: UploadStepHeaderProps) {
+
 
     const handleFileSelectClick = () => {
-       
-        if (inputFileRef && inputFileRef.current) {
+        if (inputFileRef.current) {
+            inputFileRef.current.value = ""; // ✅ Clear file input value before opening
             inputFileRef.current.click();
         }
-    }
-
-    
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            setBrowserFiles(Array.from(e.target.files));
-        }
-    }
-
+    };
+      
     const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
         event.preventDefault(); // Prevent default browser behavior
         setBrowserFiles(Array.from(event.dataTransfer.files));
@@ -45,7 +40,7 @@ function UploadStepHeader({ browserFiles, uploading, setBrowserFiles, inputFileR
                     <div className=''>
                         <Upload className='mx-auto h-8 w-8 sm:h-10 sm:w-10 text-main' />
                         <input type='file'
-                            accept='.mp4, .txt,.md,video/*,audio/*,text/plain,text/markdown'
+                            accept={accept}
                             multiple
                             ref={inputFileRef}
                             className='hidden'
@@ -68,6 +63,14 @@ function UploadStepHeader({ browserFiles, uploading, setBrowserFiles, inputFileR
                             <Upload className='h-4 w-4 sm:h-5 sm:w-5 mr-1' />
                             {uploading ? 'Uploading...' : 'Upload Files'}
                         </Button>
+                        <Button
+                                onClick={(() => setBrowserFiles([]))}
+                                variant="outline"
+                                className="border border-gray-400 text-gray-700 rounded-3xl text-sm ml-2"
+                            >
+                                <XCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-1" />
+                                Clear Files
+                            </Button>
                     </div>
                 )}
             </div>

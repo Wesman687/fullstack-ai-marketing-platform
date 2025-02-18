@@ -21,7 +21,7 @@ function ProjectList({ projects }: ProjectListProps) {
                 {project.title}
               </CardTitle>
               <p className="text-xs sm:text-sm text-gray-500 truncate">
-                Updated {getTimeDifference(project.updatedAt)}
+                Updated {getTimeDifference(project.updatedAt.toString())}
               </p>
             </CardHeader>
           </Card>

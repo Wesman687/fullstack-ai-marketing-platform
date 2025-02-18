@@ -1,6 +1,0 @@
-#!/mnt/c/Code/AiMarketing/fullstack-ai-marketing-platform/asset-processing-service/.venv/bin/python
-import sys
-from asset_processing_service.main import main
-
-if __name__ == '__main__':
-    sys.exit(main())

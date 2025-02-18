@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 
 
 export async function GET() {
+    
     try {
         const templates = await getTemplatesForUser();
         return NextResponse.json(templates, { status: 200 });

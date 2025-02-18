@@ -7,15 +7,18 @@ interface ConfigurePromptStepHeaderProps {
   handlePromptCreate: () => void;
   isCreatingPrompt: boolean;
   isImportingTemplate: boolean;
+  setIsTemplatePopupOpen: (isOpen: boolean) => void;
 }
 
-function ConfigurePromptStepHeader({ handlePromptCreate, isCreatingPrompt, isImportingTemplate }: ConfigurePromptStepHeaderProps) {
+function ConfigurePromptStepHeader({ handlePromptCreate, isCreatingPrompt, isImportingTemplate, setIsTemplatePopupOpen }: ConfigurePromptStepHeaderProps) {
   return (
     <div className="flex flex-col sm:flex-row items-start justify-between ">
       <h2 className='text-xl md:text-2xl lg:text-2xl font-bold mb-4 sm:mb-0'>Step 3: Prompts</h2>
       <div className='flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto'>
         {/* TODO:Load Template Button, after template module is made. */}
-        <Button className='bg-main/10 text-main font-semibold hover:bg-main/15 text-sm sm:text-base rounded-lg w-full sm:w-auto h-8 sm:h-10'>
+        <Button className='bg-main/10 text-main font-semibold hover:bg-main/15 text-sm sm:text-base rounded-lg w-full sm:w-auto h-8 sm:h-10'
+          onClick={() => setIsTemplatePopupOpen(true)}
+          >
           <LayoutTemplate className='w-4 h-4 mr-2' />
           { isImportingTemplate ? "Importing..." : "Load Template"}
           </Button>

@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Home, LayoutDashboard, Settings } from "lucide-react";
+import { Home, LayoutDashboard, Settings, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,12 @@ function SidebarNav({ isCollapsed }: SidebarNavProps) {
       label: "Settings",
       icon: Settings,
       isActive: (pathname) => pathname === "/settings",
+    },
+    {
+      href: "/designs",
+      label: "Designs",
+      icon: Palette,
+      isActive: (pathname) => pathname === "/designs",
     },
   ];
 

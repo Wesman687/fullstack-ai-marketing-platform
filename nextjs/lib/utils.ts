@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 export function getTimeDifference(dateString: string): string {
   const date = new Date(dateString);
   if (!(date instanceof Date) || isNaN(date.getTime())) {
-    return "Invalid Date"; // Or handle it differently, e.g., return an empty string
+    return "Not a valid date string" // Or handle it differently, e.g., return an empty string
   }
 
   // If it's a valid date, proceed with the calculation

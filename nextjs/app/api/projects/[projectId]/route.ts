@@ -25,7 +25,6 @@ export async function PATCH(request: NextRequest) {
     }
 
     const { title } = validateData.data
-    console.log(projectId)
     const database = await db();
     try {
         // ✅ Await db() to get the instance
