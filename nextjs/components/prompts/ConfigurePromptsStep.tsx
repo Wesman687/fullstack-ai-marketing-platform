@@ -36,7 +36,7 @@ function ConfigurePromptsStep({ projectId }: ConfigurePromptsStepProps) {
     } else {
       setSelectedPrompt(null);
     }
-  }, [searchParams]);
+  }, [prompts, searchParams]);
 
   useEffect(() => {
     const fetchPrompts = async () => {

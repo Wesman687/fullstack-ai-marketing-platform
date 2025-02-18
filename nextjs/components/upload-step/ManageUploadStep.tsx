@@ -92,7 +92,7 @@ function ManageUploadStep({ projectId }: ManageUploadStepProps) {
     }
   
     return () => controller.abort(); // ✅ Cleanup function to cancel previous request
-  }, [projectId]); // ✅ Only depends on `projectId`
+  }, [fetchAssets, projectId]); // ✅ Only depends on `projectId`
    // ✅ Ensures only one request runs at a time
 
   useEffect(() => {
@@ -101,7 +101,7 @@ function ManageUploadStep({ projectId }: ManageUploadStepProps) {
     }, 5000);
   
     return () => clearInterval(intervalId); // Cleanup on unmount
-  }, []);
+  }, [fetchAssetProcessingJobs]);
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
           if (e.target.files) {
               setBrowserFiles(Array.from(e.target.files));

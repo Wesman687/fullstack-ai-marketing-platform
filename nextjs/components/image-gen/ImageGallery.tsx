@@ -63,7 +63,7 @@ function ImageGallery({ userId, images, setImages, selectedImage, setSelectedIma
 
     useEffect(() => {
         if (userId) fetchImages();
-    }, [userId]);
+    }, [userId, fetchImages]);
 
     // ✅ Apply filter to images
     const filteredImages = images.filter((item) => {

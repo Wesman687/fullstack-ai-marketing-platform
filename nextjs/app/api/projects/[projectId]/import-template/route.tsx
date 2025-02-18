@@ -2,7 +2,6 @@ import { db } from "@/server/db";
 import { promptsTable, templatePromptsTable } from "@/server/db/schema/schema";
 import { auth } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
-import { NextApiRequest } from "next";
 import { NextRequest, NextResponse } from "next/server";
 
 export const config = {
