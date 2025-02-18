@@ -1,21 +1,22 @@
 /* eslint-disable @next/next/no-img-element */
+import { ImageResponse } from '@/lib/imageprops';
 import axios from 'axios';
+import { Menu } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 interface DisplayImageProps {
     userId: string | null;
     setSelectedImage: (url: string) => void; // ✅ Callback to parent component
     selectedImage: string | null; // ✅ Selected image state from parent
+    images: ImageResponse[]; // ✅ Images state from parent
+    setImages: (images: ImageResponse[]) => void; // ✅ Callback to update images in parent
+    strength: number
+    setStrength: (strength: number) => void
 }
 
-interface ImageResponse {
-    url: string;
-    id: string;
-    action: string;  // ✅ Added action field for filtering
-}
 
-function DisplayImage({ userId, setSelectedImage, selectedImage }: DisplayImageProps) {
-    const [images, setImages] = useState<ImageResponse[]>([]);
+
+function DisplayImage({ userId, setSelectedImage, selectedImage, setImages, images, strength, setStrength }: DisplayImageProps) {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<string>("all"); // ✅ Default filter: Show all images
 
@@ -49,6 +50,36 @@ function DisplayImage({ userId, setSelectedImage, selectedImage }: DisplayImageP
 
     return (
         <div>
+            {/* 🔹 Strength Slider */}
+            <div className="mb-4 flex flex-col items-center">
+                <div className='flex'>
+
+                    <label htmlFor="strength-slider" className="text-gray-700 font-semibold mb-2">
+                        Strength: {strength.toFixed(1)}
+                    </label>
+                    <div className="relative">
+                        {/* Menu Icon (Trigger) */}
+                        <Menu className="h-6 w-6 ml-2 text-gray-600 cursor-pointer peer" />
+
+                        {/* Tooltip (Only appears when hovering over the Menu icon) */}
+                        <div className="absolute left-0 bottom-full mb-2 w-[20vw] p-4 text-sm text-white bg-gray-600/80 rounded opacity-0 
+    peer-hover:opacity-100 transition-opacity duration-200 shadow-lg pointer-events-none z-50">
+                            Sometimes referred to as denoising, this parameter controls how much influence the image parameter has on the generated image. A value of 0 would yield an image that is identical to the input. A value of 1 would be as if you passed in no image at all.
+                        </div>
+                    </div>
+                </div>
+                <input
+                    id="strength-slider"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={strength}
+                    onChange={(e) => setStrength(parseFloat(e.target.value))}
+                    className="w-full md:w-2/3 cursor-pointer accent-blue-500"
+                />
+            </div>
+
             {/* ✅ Filter Buttons */}
             <div className="flex space-x-4 mb-4 items-center justify-center">
                 <button
@@ -72,13 +103,12 @@ function DisplayImage({ userId, setSelectedImage, selectedImage }: DisplayImageP
             {loading ? (
                 <p>Loading...</p>
             ) : (
-                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                     {filteredImages.map((item) => (
                         <div
                             key={item.id}
-                            className={`relative w-full h-[200px] cursor-pointer border-4 shadow-md ${
-                                selectedImage === item.url ? "border-blue-500 rounded-xl" : "border-transparent"
-                            }`}
+                            className={`relative w-full h-[150px] cursor-pointer border-4 shadow-md ${selectedImage === item.url ? "border-blue-500 rounded-xl" : "border-transparent"
+                                }`}
                             onClick={() => handleSelectImage(item.url)}
                         >
                             <img

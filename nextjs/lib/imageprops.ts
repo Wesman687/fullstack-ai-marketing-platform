@@ -55,3 +55,8 @@ export  const aspectRatios: AspectRatioProps[] = [
     "photographic", "pixel-art", "tile-texture"
   ];
   
+  export interface ImageResponse {
+      url: string;
+      id: string;
+      action: string;  // ✅ Added action field for filtering
+  }

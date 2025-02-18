@@ -10,14 +10,11 @@ import React, { useEffect, useState } from "react";
 export default  function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoading(true);
     const fetchTemplates = async () => {
       const result = await axios.get("/api/templatez");
       setTemplates(result.data);
-      setIsLoading(false);
     };
     fetchTemplates();
   }, []);

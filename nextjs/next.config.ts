@@ -17,8 +17,6 @@ const nextConfig = {
       console.warn(message); // Allow other warnings
     }
   },
-  dangerouslyAllowSVG: true, // ✅ Enable SVG images
-  contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
 
 };
 module.exports = nextConfig;

@@ -4,7 +4,7 @@ import axios from "axios";
 import Image from "next/image";
 import UploadStepHeader from "@/components/upload-step/UploadStepHeader";
 import ImageGenSelector from "@/components/image-gen/ImageGenSelector";
-import { AspectRatioProps, aspectRatios, ModelProps, models, styles } from "@/lib/imageprops";
+import { AspectRatioProps, aspectRatios, ImageResponse, ModelProps, models, styles } from "@/lib/imageprops";
 import toast from "react-hot-toast";
 import DisplayImage from "@/components/image-gen/DisplayImage";
 
@@ -28,6 +28,8 @@ export default function GenerateImage() {
   const [uploadingImage, setUploadingImage] = useState(false)
   const [imageGallery, setImageGallery] = useState(false)
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [images, setImages] = useState<ImageResponse[]>([]);
+  const [strength, setStrength] = useState<number>(0);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -72,27 +74,29 @@ export default function GenerateImage() {
       formData.append("user_id", userId || "default_user");
       formData.append("format", fileFormat || "png");
 
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_IMAGE_GEN}/image/upload`, formData, {
+      await axios.post(`${process.env.NEXT_PUBLIC_API_IMAGE_GEN}/image/upload`, formData, {
         headers: {
           "Content-Type": "multipart/form-data", // ✅ Required for file uploads
         },
       });
-      console.log("Upload Response:", res.data);
-      setImagePath(res.data.image_url);
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_IMAGE_GEN}/image/${userId}`);
+      setImages(response.data.images);
     } catch (error) {
       console.error("Upload failed:", error);
     } finally {
       setUploading(false);
+      setBrowserFiles([]);
+      toggleImageGallery()
     }
   };
   const generateImage = async () => {
+    setImagePath(null);
     if (!prompt.trim()) {
       setError("Prompt cannot be empty.");
       return;
     }
     // If the style is not selected or empty, default to 'digital-art'
     const selectedStyle = styles.includes(style) ? style : "digital-art";
-    setLoading(true);
     setError(null);
     setImagePath(null);
     const seed = Math.round((1 - seedPercentage / 100) * 4294967294);
@@ -107,7 +111,14 @@ export default function GenerateImage() {
       formData.append("seed", seed.toString());
       formData.append("action", model.action);
       formData.append("user_id", userId ?? "anonymous");
-      console.log('test')
+      formData.append("strength", strength.toFixed(1));
+      if (selectedImage) {
+        console.log("Fetching image from Spaces:", selectedImage);
+        const response = await fetch(selectedImage); // Fetch image
+        const blob = await response.blob(); // Convert to Blob
+        const file = new File([blob], "selected-image.png", { type: blob.type }); // Create File object
+        formData.append("file", file); // ✅ Attach file to FormData
+      }
 
       const response = await axios.post("http://api.paul-miracle.info:5000/image/generate", formData, {
         headers: {
@@ -117,13 +128,16 @@ export default function GenerateImage() {
       });
 
       if (response.data.image_url) {
-        setImagePath(response.data.image_url)
+        setImagePath(response.data.image_url);
+
+        // ✅ Refresh Gallery to show the new image
+        setImageGallery(false);
+        setTimeout(() => setImageGallery(true), 100);
       }
     } catch (err) {
       setError("Failed to generate image. Please try again.");
       console.error(err);
     } finally {
-      setLoading(false);
       setBrowserFiles([]);
       setSelectedImage(null);
     }
@@ -151,9 +165,7 @@ export default function GenerateImage() {
 
   // ✅ Toggle Image Gallery & Close Upload
   const toggleImageGallery = () => {
-    if (imagePath){
-      return
-    }
+
     setImageGallery(!imageGallery);
     setUploadingImage(false); // ✅ Close Upload Image
     setBrowserFiles([]); // ✅ Clear uploaded files
@@ -231,7 +243,7 @@ export default function GenerateImage() {
 
           {imageGallery && (
             <div className="flex justify-center">
-              <DisplayImage userId={userId} setSelectedImage={setSelectedImage} selectedImage={selectedImage} />
+              <DisplayImage userId={userId} setSelectedImage={setSelectedImage} selectedImage={selectedImage} images={images} setImages={setImages} strength={strength} setStrength={setStrength} />
             </div>
           )}
 
