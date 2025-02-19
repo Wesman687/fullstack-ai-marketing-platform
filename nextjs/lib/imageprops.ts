@@ -41,7 +41,24 @@ export  const aspectRatios: AspectRatioProps[] = [
       upload: true,
       uploadRequired: false,
     },
+    {
+      model: "sd3",
+      name: "Stable Diffusion 3.0 & 3.5",
+      desc: "3 - 6.5 credits, Generate using Stable Diffusion 3.5 models, Stability AI latest base model:",
+      action: "generate",
+      upload: true,
+      uploadRequired: false,
+    },
   ];
+  export const versions = [
+    "sd3-large",
+    "sd3-large-turbo",
+    "sd3-medium",
+    "sd3.5-large",
+    "sd3.5-large-turbo",
+    "sd3.5-medium"
+  ];
+  
   
   // 🎨 Available styles
   export const styles: string[] = [

@@ -1,15 +1,15 @@
 /* eslint-disable @next/next/no-img-element */
-import { ImageResponse } from '@/lib/imageprops';
 import { Menu } from 'lucide-react'; // ✅ Import Download Icon
 import React from 'react';
 import ImageGallery from './ImageGallery';
+import { ImageModel } from '@/lib/imageprops';
 
 interface DisplayImageProps {
     userId: string | null;
     setSelectedImage: (url: string) => void;
     selectedImage: string | null;
-    images: ImageResponse[];
-    setImages: (images: ImageResponse[]) => void;
+    images: ImageModel[];
+    setImages: (images: ImageModel[]) => void;
     strength: number;
     setStrength: (strength: number) => void;
 }

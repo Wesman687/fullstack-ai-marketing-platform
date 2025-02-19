@@ -32,6 +32,7 @@ export default function GenerateImage() {
   const [isViewerOpen, setIsViewerOpen] = useState<boolean>(false)
   const [image, setImage] = useState<ImageModel | null>(null)
   const [creativity, setCreativity] = useState<number>(0.5)
+  const [version, setVersion] = useState<string>("");
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -65,7 +66,6 @@ export default function GenerateImage() {
 
   const handleUpload = async () => {
     setUploading(true);
-
     try {
       if (!browserFiles.length) {
         toast.error("No file selected");
@@ -115,6 +115,9 @@ export default function GenerateImage() {
       formData.append("seed", seed.toString());
       formData.append("action", model.action);
       formData.append("user_id", userId ?? "anonymous");
+      if (model.model === "sd3"){
+        formData.append("version", version);
+      }
       
       if (selectedImage) {
         console.log("Fetching image from Spaces:", selectedImage);
@@ -203,6 +206,8 @@ export default function GenerateImage() {
             generateImage={generateImage}
             creativity={creativity}
             setCreativity={setCreativity}
+            version={version}
+            setVersion={setVersion}
           />
 
           {/* 🔹 Toggle Upload Image Section */}

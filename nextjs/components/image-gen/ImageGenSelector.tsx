@@ -8,6 +8,7 @@ import SeedSelector from './GenSelectors/SeedSelector'
 import GenPromptInput from './GenSelectors/GenPromptInput'
 import GenNegativePrompts from './GenSelectors/GenNegativePrompts'
 import CreativitySlider from './GenSelectors/CreativitySlider'
+import SdVersion from './GenSelectors/SdVersion'
 
 interface ImageGenSelectorProps {
     model: ModelProps
@@ -31,12 +32,14 @@ interface ImageGenSelectorProps {
     setSeedPercentage: (seedPercentage: number) => void
     creativity: number
     setCreativity: (creativity: number) => void
+    version: string
+    setVersion: (version: string) => void
 
 }
 
 function ImageGenSelector({ model, setModel, aspectRatio, setAspectRatio, style, setStyle, format, 
     setFormat, generateImage, loading, error, prompt, setPrompt, negativePrompt, setNegativePrompt, 
-    showNegative, setShowNegative, seedPercentage, setSeedPercentage, creativity, setCreativity }: ImageGenSelectorProps) {
+    showNegative, setShowNegative, seedPercentage, setSeedPercentage, creativity, setCreativity, version, setVersion }: ImageGenSelectorProps) {
 
     const [promptError, setPromptError] = useState<{ prompt: boolean; negativePrompt: boolean }>({
         prompt: false,
@@ -85,22 +88,24 @@ function ImageGenSelector({ model, setModel, aspectRatio, setAspectRatio, style,
             
             <div className="mt-2 flex items-center gap-3 justify-evenly w-full">
                 {/* Format Selection */}
-                {["core", "ultra", "upscale1", "upscale3"].includes(model.model) && "upscale1" && <ImageFormat format={format} setFormat={setFormat} formats={formats} />}                
+                {["core", "ultra", "upscale1", "upscale3", "sd3"].includes(model.model) && "upscale1" && <ImageFormat format={format} setFormat={setFormat} formats={formats} />}                
                 {/* Aspect Ratio Selection */}
                 {["core", "ultra"].includes(model.model) && <AspectRatio aspectRatio={aspectRatio} setAspectRatio={setAspectRatio} />}
                 {/* Style Selection */}
-                {["core", "ultra", "upscale3"].includes(model.model) && <GenStyles style={style} setStyle={setStyle} />  }    
-                {/*Creativity Slider*/}
+                {["core", "ultra", "upscale3", "sd3"].includes(model.model) && <GenStyles style={style} setStyle={setStyle} />  }    
+                {/* SD3 Versions*/}
+                {["sd3"].includes(model.model) && <SdVersion version={version} setVersion={setVersion} />}
             </div>
             <div className='flex gap-4'>
+                {/*Creativity Slider*/}
             {["upscale2", "upscale3"].includes(model.model) && <CreativitySlider creativity={creativity} setCreativity={setCreativity} />}
             {/* Seed Slider */}
-            {["core", "ultra", "upscale2", "upscale3"].includes(model.model) && <SeedSelector seedPercentage={seedPercentage} setSeedPercentage={setSeedPercentage} />}
+            {["core", "ultra", "upscale2", "upscale3", "sd3"].includes(model.model) && <SeedSelector seedPercentage={seedPercentage} setSeedPercentage={setSeedPercentage} />}
                     </div>
 
             {/* Prompt Input */}
             <GenPromptInput prompt={prompt} setPrompt={setPrompt} promptError={promptError} handleInputChange={handleInputChange} />
-            {["core", "ultra", "upscale2", "upscale3"].includes(model.model) && <GenNegativePrompts showNegative={showNegative} setShowNegative={setShowNegative} negativePrompt={negativePrompt} promptError={promptError} handleInputChange={handleInputChange} />}
+            {["core", "ultra", "upscale2", "upscale3", "sd3"].includes(model.model) && <GenNegativePrompts showNegative={showNegative} setShowNegative={setShowNegative} negativePrompt={negativePrompt} promptError={promptError} handleInputChange={handleInputChange} />}
             <div className="flex items-center justify-center">
 
                 <button
