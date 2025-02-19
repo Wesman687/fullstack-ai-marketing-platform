@@ -96,14 +96,14 @@ const SortableImage: React.FC<SortableImageProps> = ({ item, selectedImage, setS
         >
             {/* ✅ Image Wrapper */}
             <div
-                className={`relative w-full h-[200px] border-4 shadow-md ${selectedImage === item.url ? "border-blue-500 rounded-xl" : "border-transparent"
+                className={`relative w-full max-h-[200px] max-w-[400px] border-4 shadow-md ${selectedImage === item.url ? "border-blue-500 rounded-xl" : "border-transparent"
                     }`}
             >
                 {/* ✅ Apply Drag Listeners Only to Image */}
                 <img
                     src={item.url}
                     alt="Generated"
-                    className="w-full h-full rounded-lg"
+                    className="w-full max-h-[200px] rounded-lg"
                     loading="lazy"
                     {...attributes} // ✅ Keeps dragging functional
                     {...listeners}
@@ -182,27 +182,23 @@ export default function ImageGallery({ userId, images, setImages, selectedImage,
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<string>("all");
     
-
-
-    // ✅ Fetch Images
-    const fetchImages = async () => {
-        try {
-            const response = await axios.get(`${process.env.NEXT_PUBLIC_API_IMAGE_GEN}/image/${userId}`);
-            setImages(response.data.images); // ✅ Update state with sorted images
-
-        } catch (error) {
-            console.error("Error fetching images:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-
     useEffect(() => {
+        const fetchImages = async () => {
+            try {
+                const response = await axios.get(`${process.env.NEXT_PUBLIC_API_IMAGE_GEN}/image/${userId}`);
+                setImages(response.data.images); // ✅ Update state with sorted images
+    
+            } catch (error) {
+                console.error("Error fetching images:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
         if (userId) {
+        
             fetchImages();
         }
-    }, [userId]);
+    }, [userId,]);
 
     // ✅ Drag-and-Drop Setup
     const sensors = useSensors(useSensor(PointerSensor), useSensor(TouchSensor));
@@ -239,10 +235,7 @@ export default function ImageGallery({ userId, images, setImages, selectedImage,
             // ✅ Remove fetchImages() to prevent state reset
         } catch (error) {
             console.error("❌ Failed to save order:", error);
-            toast.error("Failed to save order.");
-    
-            // 🔄 If the backend update fails, revert to the previous state
-            fetchImages();
+            toast.error("Failed to save order.");               
         }
     };
 
@@ -252,6 +245,8 @@ export default function ImageGallery({ userId, images, setImages, selectedImage,
         .filter((item) => {
             if (filter === "upload") return item.action === "upload";
             if (filter === "generated") return item.action !== "upload";
+            if (filter === 'edit') return item.action === "edit";
+            if (filter === "upscale") return item.action === "upscale";
             if (filter === "favorite") return item.favorite === true;
             return true;
         })
@@ -270,6 +265,9 @@ export default function ImageGallery({ userId, images, setImages, selectedImage,
                 <button onClick={() => setFilter("upload")} className={`px-4 py-2 rounded-lg ${filter === "upload" ? "bg-green-500 text-white" : "bg-gray-300 text-black"}`}>Uploads</button>
                 <button onClick={() => setFilter("generated")} className={`px-4 py-2 rounded-lg ${filter === "generated" ? "bg-purple-500 text-white" : "bg-gray-300 text-black"}`}>Generated</button>
                 <button onClick={() => setFilter("favorite")} className={`px-4 py-2 rounded-lg ${filter === "favorite" ? "bg-yellow-500 text-white" : "bg-gray-300 text-black"}`}>⭐ Favorites</button>
+                <button onClick={() => setFilter("edit")} className={`px-4 py-2 rounded-lg ${filter === "edit" ? "bg-red-500 text-white" : "bg-gray-300 text-black"}`}>Edited</button>
+                <button onClick={() => setFilter("upscale")} className={`px-4 py-2 rounded-lg ${filter === "upscale" ? "bg-pink-500 text-white" : "bg-gray-300 text-black"}`}>UpScaled</button>
+
             </div>
 
             {loading ? (

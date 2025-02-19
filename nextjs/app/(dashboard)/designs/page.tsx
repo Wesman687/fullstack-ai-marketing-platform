@@ -7,6 +7,8 @@ import { AspectRatioProps, aspectRatios, ImageModel, ModelProps, models, styles 
 import toast from "react-hot-toast";
 import DisplayImage from "@/components/image-gen/DisplayImage";
 import ImagePreviewModal from "@/components/image-gen/ImageViewerModal";
+import { generateImage } from "@/components/image-gen/GenerateFunctions.tsx/HandleGenerate";
+import { upscaleImage } from "@/components/image-gen/GenerateFunctions.tsx/HandleUpscale";
 
 export default function GenerateImage() {
   const [prompt, setPrompt] = useState<string>("");
@@ -94,64 +96,7 @@ export default function GenerateImage() {
       toggleImageGallery()
     }
   };
-  const generateImage = async () => {
-    setLoading(true);
-    setError(null);
-    if (!prompt.trim()) {
-      setError("Prompt cannot be empty.");
-      return;
-    }
-    // If the style is not selected or empty, default to 'digital-art'
-    const selectedStyle = styles.includes(style) ? style : "digital-art";
-    const seed = Math.round((1 - seedPercentage / 100) * 4294967294);
-    try {
-      const formData = new FormData();
-      formData.append("prompt", prompt);
-      formData.append("style", selectedStyle);
-      formData.append("output_format", format);
-      formData.append("model", model.model);
-      formData.append("negative_prompt", negativePrompt);
-      formData.append("aspect_ratio", aspectRatio.ratio.split(":")[0]);
-      formData.append("seed", seed.toString());
-      formData.append("action", model.action);
-      formData.append("user_id", userId ?? "anonymous");
-      if (model.model === "sd3"){
-        formData.append("version", version);
-      }
-      
-      if (selectedImage) {
-        console.log("Fetching image from Spaces:", selectedImage);
-        const response = await fetch(selectedImage); // Fetch image
-        const blob = await response.blob(); // Convert to Blob
-        const file = new File([blob], "selected-image.png", { type: blob.type }); // Create File object
-        formData.append("file", file); // ✅ Attach file to FormData
-        formData.append("strength", strength.toFixed(1));
-      }
-
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_IMAGE_GEN}/image/generate`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          "Accept": "image/*",
-        },// Set timeout to 60 seconds (60000 milliseconds)
-      });
-      if (response.data.image) {
-        setImage(response.data.image)
-        setIsViewerOpen(true)
-        setImages((prevImages) => [...prevImages, response.data]);
-        // ✅ Refresh Gallery to show the new image
-        setImageGallery(false);
-        setTimeout(() => setImageGallery(true), 100);
-      }
-    } catch (err) {
-      setError("Failed to generate image. Please try again.");
-      console.error(err);
-    } finally {
-      setBrowserFiles([]);
-      setSelectedImage(null);
-      setLoading(false);
-      setUploadingImage(false)
-    }
-  };
+  
   useEffect(() => {
     setLoading(true)
     const fetchData = async () => {
@@ -175,40 +120,30 @@ export default function GenerateImage() {
 
   // ✅ Toggle Image Gallery & Close Upload
   const toggleImageGallery = () => {
-
     setImageGallery(!imageGallery);
     setUploadingImage(false); // ✅ Close Upload Image
     setBrowserFiles([]); // ✅ Clear uploaded files
   };
+
+  const handleGenerateImage = () => { 
+    if (model.action === "generate") generateImage({ prompt, style, format, model, negativePrompt, 
+      seedPercentage, aspectRatio, userId, selectedImage, strength, version, images, 
+      setImages, setImage, setIsViewerOpen, setImageGallery, setLoading, setError, 
+      setSelectedImage, setBrowserFiles, setUploadingImage });
+
+    if (model.action === "upscale") upscaleImage({ prompt, format, style, selectedImage, images,
+      setIsViewerOpen, setImageGallery, setLoading, setError, setBrowserFiles, 
+      negativePrompt, setImages, setImage, seedPercentage, creativity, model, userId });
+  };
+  
   return (
     <div className="flex flex-col items-center p-6 text-white justify-center">
       
         <div className="w-full max-w-6xl bg-gray-200 rounded-xl p-6 text-gray-900 shadow-lg">
-          <ImageGenSelector
-            style={style}
-            setStyle={setStyle}
-            model={model}
-            setModel={setModel}
-            aspectRatio={aspectRatio}
-            setAspectRatio={setAspectRatio}
-            format={format}
-            setFormat={setFormat}
-            loading={loading}
-            error={error}
-            prompt={prompt}
-            setPrompt={setPrompt}
-            negativePrompt={negativePrompt}
-            setNegativePrompt={setNegativePrompt}
-            showNegative={showNegative}
-            setShowNegative={setShowNegative}
-            seedPercentage={seedPercentage}
-            setSeedPercentage={setSeedPercentage}
-            generateImage={generateImage}
-            creativity={creativity}
-            setCreativity={setCreativity}
-            version={version}
-            setVersion={setVersion}
-          />
+        <ImageGenSelector {...{ style, setStyle, model, setModel, aspectRatio, setAspectRatio, format, setFormat, loading, error, prompt, setPrompt, 
+          negativePrompt, setNegativePrompt, showNegative, setShowNegative, seedPercentage, setSeedPercentage, 
+          handleGenerateImage, creativity, setCreativity, version, setVersion }} />
+
 
           {/* 🔹 Toggle Upload Image Section */}
           {model.upload ? (

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Star, Trash2, X } from "lucide-react";
-import { deleteImage, toggleFavorite } from "@/app/utils/imageUtils";
+import { Download, Star, Trash2, X } from "lucide-react";
+import { deleteImage, downloadImage, toggleFavorite } from "@/app/utils/imageUtils";
 import ConfirmationModal from "../ConfirmationModal";
 import { ImageModel } from "@/lib/imageprops";
 import { motion, AnimatePresence } from "framer-motion";
@@ -33,7 +33,7 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({ isOpen, image, onCl
         <>
           {/* Background Overlay */}
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-main bg-opacity-75 flex items-center justify-center z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 1 }}
@@ -41,7 +41,7 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({ isOpen, image, onCl
           >
             {/* Modal Content */}
             <motion.div
-              className="relative max-w-4xl p-6 bg-white rounded-lg shadow-lg flex flex-col items-center"
+              className="relative max-w-[80vw] p-6 bg-gray-300/80 rounded-lg shadow-lg flex flex-col items-center max-h-[90vh] border-white border-2"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
@@ -54,12 +54,21 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({ isOpen, image, onCl
               >
                 <X className="h-6 w-6" />
               </button>
+              <button
+                className="absolute bottom-6 p-2 bg-gray-800/80 text-white rounded-full hover:bg-gray-600 transition"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    downloadImage(image.url);
+                }}
+            >
+                <Download className="h-5 w-5" />
+            </button>
 
               {/* Image Display */}
               <motion.img
                 src={image.url}
                 alt="Selected"
-                className="w-full max-w-3xl h-auto rounded-lg"
+                className="w-full max-w-[80vw] h-full rounded-lg max-h-[80vh] object-contain"
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }} 

@@ -19,7 +19,7 @@ interface ImageGenSelectorProps {
     setStyle: (style: string) => void
     format: string
     setFormat: (format: string) => void
-    generateImage: () => void
+    handleGenerateImage: () => void
     loading: boolean
     error: string | null
     prompt: string
@@ -38,7 +38,7 @@ interface ImageGenSelectorProps {
 }
 
 function ImageGenSelector({ model, setModel, aspectRatio, setAspectRatio, style, setStyle, format, 
-    setFormat, generateImage, loading, error, prompt, setPrompt, negativePrompt, setNegativePrompt, 
+    setFormat, handleGenerateImage, loading, error, prompt, setPrompt, negativePrompt, setNegativePrompt, 
     showNegative, setShowNegative, seedPercentage, setSeedPercentage, creativity, setCreativity, version, setVersion }: ImageGenSelectorProps) {
 
     const [promptError, setPromptError] = useState<{ prompt: boolean; negativePrompt: boolean }>({
@@ -107,9 +107,8 @@ function ImageGenSelector({ model, setModel, aspectRatio, setAspectRatio, style,
             <GenPromptInput prompt={prompt} setPrompt={setPrompt} promptError={promptError} handleInputChange={handleInputChange} />
             {["core", "ultra", "upscale2", "upscale3", "sd3"].includes(model.model) && <GenNegativePrompts showNegative={showNegative} setShowNegative={setShowNegative} negativePrompt={negativePrompt} promptError={promptError} handleInputChange={handleInputChange} />}
             <div className="flex items-center justify-center">
-
                 <button
-                    onClick={generateImage}
+                    onClick={handleGenerateImage}
                     disabled={loading}
                     className="text-white bg-main hover:text-main text-xl hover:bg-red-50 rounded-full w-fit mt-4 px-8 py-3 flex items-center gap-2"
                 >
