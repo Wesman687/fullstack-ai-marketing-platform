@@ -4,6 +4,7 @@ export interface ModelProps {
     desc: string;
     action: string;
     upload: boolean;
+    uploadRequired: boolean;
   }
   
   export interface AspectRatioProps {
@@ -29,21 +30,16 @@ export  const aspectRatios: AspectRatioProps[] = [
       name: "Generate Image (Cheap/fast)",
       desc: "Our primary service for text-to-image generation, Stable Image Core represents the best quality achievable at high speed. No prompt engineering is required! Try asking for a style, a scene, or a character, and see what you get.",
       action: "generate",
-      upload: false
+      upload: false,
+      uploadRequired: false,
     },
     {
       model: "ultra",
       name: "Generate Image (High quality)",
       desc: "Our most advanced text to image generation service, Stable Image Ultra creates the highest quality images with unprecedented prompt understanding. Ultra excels in typography, complex compositions, dynamic lighting, vibrant hues, and overall cohesion and structure of an art piece. Made from the most advanced models, including Stable Diffusion 3.5, Ultra offers the best of the Stable Diffusion ecosystem.",
       action: "generate",
-      upload: true
-    },
-    {
-      model: "UpScale",
-      name: "Upscale Image",
-      desc: "Test.",
-      action: "generate",
-      upload: false
+      upload: true,
+      uploadRequired: false,
     },
   ];
   
@@ -55,10 +51,12 @@ export  const aspectRatios: AspectRatioProps[] = [
     "photographic", "pixel-art", "tile-texture"
   ];
   
-  export interface ImageResponse {
-      url: string;
-      id: number;
-      action: string;
-      favorite: boolean;
-      sort_order: number  // ✅ Added action field for filtering
+  export interface ImageModel {
+    url: string;
+    id: number;
+    action: string;
+    favorite: boolean;
+    sort_order: number
+    uploadRequired: boolean; 
+
   }

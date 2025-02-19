@@ -17,8 +17,6 @@ type Project = {
 export default function Projects() {
 
   const [projects, setProjects] = useState<Project[]>([]);
-  // const [loading, setLoading] = useState(true);
-  // const [error, setError] = useState<string | null>(null);
 
   // ✅ Fetch projects when the component mounts
   useEffect(() => {

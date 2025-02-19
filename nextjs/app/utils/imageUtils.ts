@@ -1,9 +1,9 @@
-import { ImageResponse } from "@/lib/imageprops";
+import { ImageModel } from "@/lib/imageprops";
 import axios from "axios";
 import toast from "react-hot-toast";
 
 
-export const toggleFavorite = async (imageId: number, images: ImageResponse[], setImages: (images: ImageResponse[]) => void) => {
+export const toggleFavorite = async (imageId: number, images: ImageModel[], setImages: (images: ImageModel[]) => void) => {
     try {
         await axios.put(`${process.env.NEXT_PUBLIC_API_IMAGE_GEN}/image/${imageId}/favorite`);
         
@@ -69,7 +69,7 @@ export const downloadImage = async (url: string) => {
     }
 };
 
-export const deleteImage = async (imageId: number, images: ImageResponse[], setImages: (images: ImageResponse[]) => void) => {
+export const deleteImage = async (imageId: number, images: ImageModel[], setImages: (images: ImageModel[]) => void) => {
     try {
         await axios.delete(`${process.env.NEXT_PUBLIC_API_IMAGE_GEN}/image/delete/${imageId}`);
 

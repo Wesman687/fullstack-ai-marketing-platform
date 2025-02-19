@@ -1,19 +1,17 @@
 'use client'
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
-import Image from "next/image";
 import UploadStepHeader from "@/components/upload-step/UploadStepHeader";
 import ImageGenSelector from "@/components/image-gen/ImageGenSelector";
-import { AspectRatioProps, aspectRatios, ImageResponse, ModelProps, models, styles } from "@/lib/imageprops";
+import { AspectRatioProps, aspectRatios, ImageModel, ModelProps, models, styles } from "@/lib/imageprops";
 import toast from "react-hot-toast";
 import DisplayImage from "@/components/image-gen/DisplayImage";
-import ImagePreviewModal from "@/components/image-gen/ImagePreviewModal";
+import ImagePreviewModal from "@/components/image-gen/ImageViewerModal";
 
 export default function GenerateImage() {
   const [prompt, setPrompt] = useState<string>("");
   const [format, setFormat] = useState<string>("png");
   const [style, setStyle] = useState<string>(styles[0]); // Default style
-  const [imagePath, setImagePath] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [model, setModel] = useState<ModelProps>(models[0]);
@@ -29,9 +27,11 @@ export default function GenerateImage() {
   const [uploadingImage, setUploadingImage] = useState(false)
   const [imageGallery, setImageGallery] = useState(false)
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [images, setImages] = useState<ImageResponse[]>([]);
+  const [images, setImages] = useState<ImageModel[]>([]);
   const [strength, setStrength] = useState<number>(0);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
+  const [isViewerOpen, setIsViewerOpen] = useState<boolean>(false)
+  const [image, setImage] = useState<ImageModel | null>(null)
+  const [creativity, setCreativity] = useState<number>(0.5)
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -71,6 +71,9 @@ export default function GenerateImage() {
         toast.error("No file selected");
         return;
       }
+      if (model.uploadRequired && !selectedImage){
+        return toast.error("Please select an image before uploading.")
+      }
       const formData = new FormData();
       formData.append("file", browserFiles[0]); // ✅ Uploading only the first file
       formData.append("user_id", userId || "default_user");
@@ -94,15 +97,12 @@ export default function GenerateImage() {
   const generateImage = async () => {
     setLoading(true);
     setError(null);
-    setImagePath(null);
     if (!prompt.trim()) {
       setError("Prompt cannot be empty.");
       return;
     }
     // If the style is not selected or empty, default to 'digital-art'
     const selectedStyle = styles.includes(style) ? style : "digital-art";
-    setError(null);
-    setImagePath(null);
     const seed = Math.round((1 - seedPercentage / 100) * 4294967294);
     try {
       const formData = new FormData();
@@ -131,14 +131,10 @@ export default function GenerateImage() {
           "Accept": "image/*",
         },// Set timeout to 60 seconds (60000 milliseconds)
       });
-      if (response.data.image_url) {
-        setImagePath(response.data.image_url);
-        setIsModalOpen(true); // ✅ Open modal after image is generated
-      }
-
-      if (response.data.image_url) {
-        setImagePath(response.data.image_url);
-
+      if (response.data.image) {
+        setImage(response.data.image)
+        setIsViewerOpen(true)
+        setImages((prevImages) => [...prevImages, response.data]);
         // ✅ Refresh Gallery to show the new image
         setImageGallery(false);
         setTimeout(() => setImageGallery(true), 100);
@@ -205,6 +201,8 @@ export default function GenerateImage() {
             seedPercentage={seedPercentage}
             setSeedPercentage={setSeedPercentage}
             generateImage={generateImage}
+            creativity={creativity}
+            setCreativity={setCreativity}
           />
 
           {/* 🔹 Toggle Upload Image Section */}
@@ -256,20 +254,14 @@ export default function GenerateImage() {
             </div>
           )}
 
-          {imagePath && (
-            <div className="mt-6">
-              <h2 className="text-xl font-semibold">{browserFiles.length ? "Uploaded Image:" : "Generated Image:"}</h2>
-              <div className="w-full items-center justify-center flex">
-                <Image width={1024} height={1024} src={imagePath} alt="Generated" className="mt-2 rounded shadow-lg items-center" />
-              </div>
-            </div>
-          )}
         </div>
         {/* ✅ Image Preview Modal */}
       <ImagePreviewModal
-        isOpen={isModalOpen}
-        imageUrl={imagePath}
-        onClose={() => setIsModalOpen(false)} // ✅ Close modal on button click
+        isOpen={isViewerOpen}
+        image={image}
+        images={images}
+        setImages={setImages}
+        onClose={() => setIsViewerOpen(false)} // ✅ Close modal on button click
       />
     </div>
   );

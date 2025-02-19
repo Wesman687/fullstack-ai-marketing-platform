@@ -1,8 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 import React, { useEffect, useState } from "react";
-import { ImageResponse } from "@/lib/imageprops";
+import { ImageModel } from "@/lib/imageprops";
 import axios from "axios";
-import { Download, Star } from "lucide-react";
+import { Download, Eye, Star } from "lucide-react";
 import toast from "react-hot-toast";
 import { Trash2 } from "lucide-react";
 import { deleteImage } from "@/app/utils/imageUtils";
@@ -25,20 +25,21 @@ import { CSS } from "@dnd-kit/utilities";
 import { downloadImage, toggleFavorite } from "@/app/utils/imageUtils";
 import { rectSortingStrategy, defaultAnimateLayoutChanges } from "@dnd-kit/sortable";
 import ConfirmationModal from "../ConfirmationModal";
+import ImageViewerModal from "./ImageViewerModal";
 
 interface ImageGalleryProps {
     userId: string | null;
-    images: ImageResponse[];
-    setImages: (images: ImageResponse[]) => void;
+    images: ImageModel[];
+    setImages: (images: ImageModel[]) => void;
     selectedImage: string | null;
     setSelectedImage: (url: string) => void;
 }
 interface SortableImageProps {
-    item: ImageResponse;
+    item: ImageModel;
     selectedImage: string | null;
     setSelectedImage: (url: string) => void;
-    images: ImageResponse[]; // ✅ Add images array
-    setImages: (images: ImageResponse[]) => void; // ✅ Add setter function
+    images: ImageModel[]; // ✅ Add images array
+    setImages: (images: ImageModel[]) => void; // ✅ Add setter function
 }
 
 
@@ -57,6 +58,7 @@ const SortableImage: React.FC<SortableImageProps> = ({ item, selectedImage, setS
 
     // ✅ Track whether it's a click or a drag
     const [isDragging, setIsDragging] = useState(false);
+    const [isViewerOpen, setIsViewerOpen] = useState(false);
 
     const handlePointerDown = () => {
         setIsDragging(false); // Reset state before drag starts
@@ -107,6 +109,16 @@ const SortableImage: React.FC<SortableImageProps> = ({ item, selectedImage, setS
                     {...listeners}
                 />
             </div>
+            {/* ✅ Eye (View Image) Button - Top Left */}
+            <button
+                className="absolute top-2 left-2 p-2 bg-gray-800/80 text-white rounded-full hover:bg-gray-600 transition"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setIsViewerOpen(true);
+                }}
+            >
+                <Eye className="h-5 w-5" />
+            </button>
 
             {/* ✅ Favorite Button */}
             <button
@@ -151,6 +163,14 @@ const SortableImage: React.FC<SortableImageProps> = ({ item, selectedImage, setS
                 onClose={() => setIsDeleteModalOpen(false)}
                 onConfirm={handleDeleteConfirm}
             />
+            {/* ✅ Image Viewer Modal */}
+            <ImageViewerModal
+                isOpen={isViewerOpen}
+                image={item}
+                onClose={() => setIsViewerOpen(false)}
+                images={images}
+                setImages={setImages}
+            />
         </div>
     );
 };
@@ -161,6 +181,7 @@ const SortableImage: React.FC<SortableImageProps> = ({ item, selectedImage, setS
 export default function ImageGallery({ userId, images, setImages, selectedImage, setSelectedImage }: ImageGalleryProps) {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<string>("all");
+    
 
 
     // ✅ Fetch Images
