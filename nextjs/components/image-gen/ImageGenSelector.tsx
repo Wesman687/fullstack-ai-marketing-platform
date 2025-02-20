@@ -1,5 +1,4 @@
-import { AspectRatioProps, formats, ModelProps, models } from '@/lib/imageprops'
-import { Hourglass, Menu } from 'lucide-react'
+import { AspectRatioProps, formats, ModelProps } from '@/lib/imageprops'
 import React, { useState } from 'react'
 import ImageFormat from './GenSelectors/ImageFormat'
 import AspectRatio from './GenSelectors/AspectRatio'
@@ -9,6 +8,12 @@ import GenPromptInput from './GenSelectors/GenPromptInput'
 import GenNegativePrompts from './GenSelectors/GenNegativePrompts'
 import CreativitySlider from './GenSelectors/CreativitySlider'
 import SdVersion from './GenSelectors/SdVersion'
+import axios from 'axios'
+import PromptSuggestions from './GenSelectors/PromptSuggestions'
+import ModelSelect from './GenSelectors/ModelSelect'
+import GenerateButtonContainer from './GenSelectors/GenerateButtonContainer'
+import EnableSuggestions from './GenSelectors/EnableSuggestions'
+import GrowMask from './GenSelectors/GrowMask'
 
 interface ImageGenSelectorProps {
     model: ModelProps
@@ -34,95 +39,117 @@ interface ImageGenSelectorProps {
     setCreativity: (creativity: number) => void
     version: string
     setVersion: (version: string) => void
+    growMask: number
+    setGrowMask: (growMask: number) => void
 
 }
 
-function ImageGenSelector({ model, setModel, aspectRatio, setAspectRatio, style, setStyle, format, 
-    setFormat, handleGenerateImage, loading, error, prompt, setPrompt, negativePrompt, setNegativePrompt, 
-    showNegative, setShowNegative, seedPercentage, setSeedPercentage, creativity, setCreativity, version, setVersion }: ImageGenSelectorProps) {
-
+function ImageGenSelector({ model, setModel, aspectRatio, setAspectRatio, style, setStyle, format,
+    setFormat, handleGenerateImage, loading, error, prompt, setPrompt, negativePrompt, setNegativePrompt,
+    showNegative, setShowNegative, seedPercentage, setSeedPercentage, creativity, setCreativity, version, setVersion,
+growMask, setGrowMask }: ImageGenSelectorProps) {
     const [promptError, setPromptError] = useState<{ prompt: boolean; negativePrompt: boolean }>({
         prompt: false,
         negativePrompt: false,
     });
     const MAX_CHARACTERS = 10000;
+    const [typingTimer, setTypingTimer] = useState<NodeJS.Timeout | null>(null);
+    const [suggestion, setSuggestion] = useState<string | null>(null);
+    const [enableSuggestions, setEnableSuggestions] = useState(true);
+    const [showSuggestion, setShowSuggestion] = useState(false);
+    const [negSuggestion, setNegSuggestion] = useState<string | null>(null);
+    const [showNegSuggestion, setShowNegSuggestion] = useState(false);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>, type: "prompt" | "negativePrompt") => {
         const value = e.target.value;
-        setPromptError((prev) => ({
+        setPromptError(prev => ({
             ...prev,
-            [type]: value.length > MAX_CHARACTERS, // ✅ Update error state dynamically
+            [type]: value.length > MAX_CHARACTERS,
         }));
 
         if (type === "prompt") setPrompt(value);
         else setNegativePrompt(value);
+
+        // ✅ Reset AI suggestion state
+        setShowSuggestion(false);
+        setSuggestion(null);
+
+        // ✅ Clear existing timeout to avoid multiple API calls
+        if (typingTimer) clearTimeout(typingTimer);
+
+        // ✅ Set new timeout for fetching AI suggestion
+        const newTimer = setTimeout(() => {
+            if (value.length > 5) getAISuggestion(value, type);
+        }, 2000); // Wait for 2 seconds of inactivity
+
+        setTypingTimer(newTimer);
+    };
+
+    // ✅ Function to fetch AI-generated prompt suggestions
+    const getAISuggestion = async (currentPrompt: string, type: "prompt" | "negativePrompt") => {
+        if (enableSuggestions) {
+            try {
+                const response = await axios.post(`${process.env.NEXT_PUBLIC_API_IMAGE_GEN}/image/generate-prompt-hint`, { prompt: currentPrompt, type });
+                if (response.data.improved_prompt) {
+                    if (type === "prompt") {
+                        setSuggestion(response.data.improved_prompt);
+                        setShowSuggestion(true);
+                    } else {
+                        setNegSuggestion(response.data.improved_prompt);
+                        setShowNegSuggestion(true);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching AI suggestion:", error);
+            }
+        }
     };
     return (
-        <>
-            <div className="w-full flex items-center justify-center mb-4">
-                {/* Model Selection */}
-                <div className="relative">
-                    <Menu className="h-8 w-8 mr-4 text-gray-600 cursor-pointer peer" />
+        <>        
+            {/* ✅ Toggle AI Suggestions */}
+            <EnableSuggestions enableSuggestions={enableSuggestions} setEnableSuggestions={setEnableSuggestions} />            
+            <ModelSelect model={model} setModel={setModel} />
 
-                    {/* Tooltip (Hidden by Default, Shown on Hover) */}
-                    <div className="absolute left-0 top-10 mb-2 z-20 w-[30vw] p-6 text-l text-white bg-gray-600/80 rounded opacity-0 
-            group-hover:opacity-100 transition-opacity duration-200 shadow-lg pointer-events-none peer-hover:opacity-100 ">
-                        {models.find((m) => m.model === model.model)?.desc ?? "No description available"}
-                    </div>
-                </div>
-                <select
-                    value={model.model}  // ✅ Use the model ID, not the name
-                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                        const selectedModel = models.find((m) => m.model === e.target.value);
-                        if (selectedModel) setModel(selectedModel); // ✅ Store entire object
-                    }}
-                    className="items-center p-2 text-center rounded border text-4xl font-bold bg-transparent text-gray-900 focus:outline-none focus:border-transparent"
-                >
-                    {models.map((m, index) => (
-                        <option key={index} value={m.model}>{m.name}</option>
-                    ))}
-                </select>
-            </div>
-
-
-            
             <div className="mt-2 flex items-center gap-3 justify-evenly w-full">
                 {/* Format Selection */}
-                {["core", "ultra", "upscale1", "upscale3", "sd3"].includes(model.model) && "upscale1" && <ImageFormat format={format} setFormat={setFormat} formats={formats} />}                
+                {["core", "ultra", "fast", "creative", "sd3", "conservative", "erase", "inpaint"].includes(model.model) && "upscale1" && <ImageFormat format={format} setFormat={setFormat} formats={formats} />}
                 {/* Aspect Ratio Selection */}
                 {["core", "ultra"].includes(model.model) && <AspectRatio aspectRatio={aspectRatio} setAspectRatio={setAspectRatio} />}
                 {/* Style Selection */}
-                {["core", "ultra", "upscale3", "sd3"].includes(model.model) && <GenStyles style={style} setStyle={setStyle} />  }    
+                {["core", "ultra", "creative", "sd3", "inpaint"].includes(model.model) && <GenStyles style={style} setStyle={setStyle} />}
                 {/* SD3 Versions*/}
                 {["sd3"].includes(model.model) && <SdVersion version={version} setVersion={setVersion} />}
             </div>
             <div className='flex gap-4'>
                 {/*Creativity Slider*/}
-            {["upscale2", "upscale3"].includes(model.model) && <CreativitySlider creativity={creativity} setCreativity={setCreativity} />}
-            {/* Seed Slider */}
-            {["core", "ultra", "upscale2", "upscale3", "sd3"].includes(model.model) && <SeedSelector seedPercentage={seedPercentage} setSeedPercentage={setSeedPercentage} />}
-                    </div>
+                {["conservative", "creative"].includes(model.model) && <CreativitySlider creativity={creativity} setCreativity={setCreativity} />}
+                {/* Seed Slider */}
+                {["core", "ultra", "conservative", "creative", "sd3", "erase", "inpaint"].includes(model.model) && <SeedSelector seedPercentage={seedPercentage} setSeedPercentage={setSeedPercentage} />}
+                {/* Grow Mask */}
+                {["erase", "inpaint"].includes(model.model) && <GrowMask growMask={growMask} setGrowMask={setGrowMask} />}
+            </div>
 
             {/* Prompt Input */}
             <GenPromptInput prompt={prompt} setPrompt={setPrompt} promptError={promptError} handleInputChange={handleInputChange} />
-            {["core", "ultra", "upscale2", "upscale3", "sd3"].includes(model.model) && <GenNegativePrompts showNegative={showNegative} setShowNegative={setShowNegative} negativePrompt={negativePrompt} promptError={promptError} handleInputChange={handleInputChange} />}
-            <div className="flex items-center justify-center">
-                <button
-                    onClick={handleGenerateImage}
-                    disabled={loading}
-                    className="text-white bg-main hover:text-main text-xl hover:bg-red-50 rounded-full w-fit mt-4 px-8 py-3 flex items-center gap-2"
-                >
-                    {loading ? (
-                        <>
-                            <Hourglass className="animate-pulse h-5 w-5 text-yellow-500" /> {/* ✅ Hourglass effect */}
-                            <span>Generating...</span>
-                        </>
-                    ) : (
-                        "Generate Image"
-                    )}
-                </button>
+            {/* Negative Prompt Input */}
+            {["core", "ultra", "conservative", "creative", "sd3", "inpaint"].includes(model.model) && <GenNegativePrompts showNegative={showNegative} setShowNegative={setShowNegative} negativePrompt={negativePrompt} promptError={promptError} handleInputChange={handleInputChange} />}
+            
 
-            </div>
+            {/* AI Prompt Suggestions */}
+            <PromptSuggestions  suggestion={suggestion} showSuggestion={showSuggestion} setShowSuggestion={setShowSuggestion} 
+            enableSuggestions={enableSuggestions} setPrompt={setPrompt} setEnableSuggestions={setEnableSuggestions} 
+            />
+            {/* AI Negative Prompt Suggestions */}
+            <PromptSuggestions  
+                suggestion={negSuggestion} 
+                showSuggestion={showNegSuggestion} 
+                setShowSuggestion={setShowNegSuggestion} 
+                enableSuggestions={enableSuggestions} 
+                setPrompt={setNegativePrompt} // ✅ Set negative prompt instead
+                setEnableSuggestions={setEnableSuggestions} 
+            />
+            <GenerateButtonContainer handleGenerateImage={handleGenerateImage} loading={loading} />
+
             {/* Error Message */}
             {error && <p className="mt-4 text-red-500">{error}</p>}
         </>

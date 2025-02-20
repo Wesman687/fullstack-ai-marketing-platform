@@ -7,6 +7,7 @@ interface GenPromptInputProps {
 }
 
 function GenPromptInput({ prompt, promptError, handleInputChange }: GenPromptInputProps) {
+    
     return (
         <>
             <textarea
@@ -21,7 +22,6 @@ function GenPromptInput({ prompt, promptError, handleInputChange }: GenPromptInp
                 )
             }
         </>
-
     )
 }
 

@@ -26,7 +26,7 @@ interface GenerateImageProps {
 
 }
 
-export const generateImage = async (
+export const generateImageGenerator = async (
   props: GenerateImageProps,
 
 ) => {

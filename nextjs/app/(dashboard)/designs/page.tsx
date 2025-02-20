@@ -7,8 +7,10 @@ import { AspectRatioProps, aspectRatios, ImageModel, ModelProps, models, styles 
 import toast from "react-hot-toast";
 import DisplayImage from "@/components/image-gen/DisplayImage";
 import ImagePreviewModal from "@/components/image-gen/ImageViewerModal";
-import { generateImage } from "@/components/image-gen/GenerateFunctions.tsx/HandleGenerate";
-import { upscaleImage } from "@/components/image-gen/GenerateFunctions.tsx/HandleUpscale";
+import { generateImageGenerator } from "@/components/image-gen/GenerateFunctions/HandleGenerate";
+import { upscaleImageGenerator } from "@/components/image-gen/GenerateFunctions/HandleUpscale";
+import MaskUploader from "@/components/image-gen/GenSelectors/MaskUploader";
+import { editImageGenerator } from "@/components/image-gen/GenerateFunctions/HandleEdit";
 
 export default function GenerateImage() {
   const [prompt, setPrompt] = useState<string>("");
@@ -25,6 +27,7 @@ export default function GenerateImage() {
   const [browserFiles, setBrowserFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false)
   const inputFileRef = useRef<HTMLInputElement | null>(null)
+  const maskFileRef = useRef<HTMLInputElement | null>(null)
   const [fileFormat, setFileFormat] = useState<string>("");
   const [uploadingImage, setUploadingImage] = useState(false)
   const [imageGallery, setImageGallery] = useState(false)
@@ -35,35 +38,44 @@ export default function GenerateImage() {
   const [image, setImage] = useState<ImageModel | null>(null)
   const [creativity, setCreativity] = useState<number>(0.5)
   const [version, setVersion] = useState<string>("");
+  const [maskFile, setMaskFile] = useState<File | null>(null);
+  const [growMask, setGrowMask] = useState<number>(5)
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      const filesArray = Array.from(event.target.files);
-
-      // ✅ Normalize .jpg to .jpeg
-      const allowedFormats = ["png", "jpeg", "webp"];
-
-      const validFiles = filesArray.filter(file => {
-        let format = file.name.split(".").pop()?.toLowerCase() || "";
-        if (format === "jpg") format = "jpeg"; // 🔹 Convert .jpg to .jpeg
-
-        return allowedFormats.includes(format);
-      });
-
-      if (validFiles.length === 0) {
-        toast.error("Only PNG, JPEG, or WEBP files are allowed.");
-        return;
-      }
-
-      if (validFiles.length > 1) {
-        toast.error("Only one file can be selected.");
-        return;
-      }
-
-      // ✅ Store only the first valid file
-      setBrowserFiles([validFiles[0]]);
-      setFileFormat(validFiles[0].name.split(".").pop() || "");
+    if (!event.target.files) return;
+  
+    const filesArray = Array.from(event.target.files);
+  
+    // ✅ Normalize .jpg to .jpeg
+    const allowedFormats = ["png", "jpeg", "webp"];
+  
+    const validFiles = filesArray.filter((file) => {
+      let format = file.name.split(".").pop()?.toLowerCase() || "";
+      if (format === "jpg") format = "jpeg"; // 🔹 Convert .jpg to .jpeg
+      return allowedFormats.includes(format);
+    });
+  
+    if (validFiles.length === 0) {
+      toast.error("Only PNG, JPEG, or WEBP files are allowed.");
+      return;
     }
+  
+    if (validFiles.length > 1) {
+      toast.error("Only one file can be selected.");
+      return;
+    }
+  
+    const selectedFile = validFiles[0];
+  
+    // ✅ Check if this is a mask upload
+    if (event.target === maskFileRef.current) {
+      setMaskFile(selectedFile);
+      return;
+    }
+  
+    // ✅ Otherwise, it's a normal file upload
+    setBrowserFiles([selectedFile]);
+    setFileFormat(selectedFile.name.split(".").pop() || "");
   };
 
   const handleUpload = async () => {
@@ -106,7 +118,6 @@ export default function GenerateImage() {
       } catch (error) {
         console.error("Error fetching user ID:", error);
       } finally {
-
         setLoading(false)
       }
     };
@@ -126,24 +137,25 @@ export default function GenerateImage() {
   };
 
   const handleGenerateImage = () => { 
-    if (model.action === "generate") generateImage({ prompt, style, format, model, negativePrompt, 
+    if (model.action === "generate") generateImageGenerator({ prompt, style, format, model, negativePrompt, 
       seedPercentage, aspectRatio, userId, selectedImage, strength, version, images, 
       setImages, setImage, setIsViewerOpen, setImageGallery, setLoading, setError, 
       setSelectedImage, setBrowserFiles, setUploadingImage });
 
-    if (model.action === "upscale") upscaleImage({ prompt, format, style, selectedImage, images,
+    if (model.action === "upscale") upscaleImageGenerator({ prompt, format, style, selectedImage, images,
       setIsViewerOpen, setImageGallery, setLoading, setError, setBrowserFiles, 
       negativePrompt, setImages, setImage, seedPercentage, creativity, model, userId });
+
+    if (model.action === "edit") editImageGenerator({ prompt,  format, model, maskFile, selectedImage, seedPercentage, setImages, setLoading
+      , setError, setIsViewerOpen, userId, setImageGallery, images, setImage, growMask, style, negativePrompt})
   };
   
   return (
-    <div className="flex flex-col items-center p-6 text-white justify-center">
-      
+    <div className="flex flex-col items-center p-6 text-white justify-center">      
         <div className="w-full max-w-6xl bg-gray-200 rounded-xl p-6 text-gray-900 shadow-lg">
         <ImageGenSelector {...{ style, setStyle, model, setModel, aspectRatio, setAspectRatio, format, setFormat, loading, error, prompt, setPrompt, 
           negativePrompt, setNegativePrompt, showNegative, setShowNegative, seedPercentage, setSeedPercentage, 
-          handleGenerateImage, creativity, setCreativity, version, setVersion }} />
-
+          handleGenerateImage, creativity, setCreativity, version, setVersion, growMask, setGrowMask }} />
 
           {/* 🔹 Toggle Upload Image Section */}
           {model.upload ? (
@@ -156,7 +168,6 @@ export default function GenerateImage() {
                   {uploadingImage ? "Close Upload Image" : "Show Upload Image"}
                 </span>
               </div>
-
               {uploadingImage && (
                 <>
                   <p className="text-center mb-2">Be sure to Upload Image before Generating.</p>
@@ -173,10 +184,11 @@ export default function GenerateImage() {
               )}
             </>
           ) : (
-            <div className="bg-gray-400 p-6 text-gray-600 rounded-lg my-6 text-center cursor-not-allowed opacity-50">
+            <div className="bg-gray-400 p-6 text-gray-600 z-[-10] rounded-lg my-6 text-center cursor-not-allowed opacity-50 pointer-events-none">
               Uploading is not available for this model
             </div>
           )}
+          {["erase"].includes(model.model) && <MaskUploader maskFileRef={maskFileRef} handleFileChange={handleFileChange} setMaskFile={setMaskFile}  />}
 
           {/* 🔹 Toggle Image Gallery Section */}
           <div className="relative flex items-center justify-center my-6 cursor-pointer" onClick={toggleImageGallery}>

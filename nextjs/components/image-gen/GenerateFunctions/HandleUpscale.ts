@@ -22,7 +22,7 @@ interface UpscaleImageProps {
     setBrowserFiles: (browserFiles: File[]) => void;
 }
 
-export const upscaleImage = async (
+export const upscaleImageGenerator = async (
     props: UpscaleImageProps,
 
 ) => {

@@ -21,6 +21,7 @@ export const toggleFavorite = async (imageId: number, images: ImageModel[], setI
 
 // ✅ Download Image
 export const downloadImage = async (url: string) => {
+    if (!url) return
 
     try {
         const response = await fetch(url);
