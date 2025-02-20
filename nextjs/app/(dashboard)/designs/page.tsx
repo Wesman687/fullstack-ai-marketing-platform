@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import UploadStepHeader from "@/components/upload-step/UploadStepHeader";
 import ImageGenSelector from "@/components/image-gen/ImageGenSelector";
-import { AspectRatioProps, aspectRatios, ImageModel, ModelProps, models, styles } from "@/lib/imageprops";
+import { AspectRatioProps, aspectRatios, DirectionalModel, ImageModel, ModelProps, models, styles } from "@/lib/imageprops";
 import toast from "react-hot-toast";
 import DisplayImage from "@/components/image-gen/DisplayImage";
 import ImagePreviewModal from "@/components/image-gen/ImageViewerModal";
@@ -40,6 +40,8 @@ export default function GenerateImage() {
   const [version, setVersion] = useState<string>("");
   const [maskFile, setMaskFile] = useState<File | null>(null);
   const [growMask, setGrowMask] = useState<number>(5)
+  const [directions, setDirections] = useState<DirectionalModel>({left: 0, right: 0, up: 0, down: 0})
+  const [searchPrompt, setSearchPrompt] = useState<string>("");
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files) return;
@@ -147,7 +149,7 @@ export default function GenerateImage() {
       negativePrompt, setImages, setImage, seedPercentage, creativity, model, userId });
 
     if (model.action === "edit") editImageGenerator({ prompt,  format, model, maskFile, selectedImage, seedPercentage, setImages, setLoading
-      , setError, setIsViewerOpen, userId, setImageGallery, images, setImage, growMask, style, negativePrompt})
+      , setError, setIsViewerOpen, userId, setImageGallery, images, setImage, growMask, style, negativePrompt, searchPrompt, directions, creativity });
   };
   
   return (
@@ -155,7 +157,8 @@ export default function GenerateImage() {
         <div className="w-full max-w-6xl bg-gray-200 rounded-xl p-6 text-gray-900 shadow-lg">
         <ImageGenSelector {...{ style, setStyle, model, setModel, aspectRatio, setAspectRatio, format, setFormat, loading, error, prompt, setPrompt, 
           negativePrompt, setNegativePrompt, showNegative, setShowNegative, seedPercentage, setSeedPercentage, 
-          handleGenerateImage, creativity, setCreativity, version, setVersion, growMask, setGrowMask }} />
+          handleGenerateImage, creativity, setCreativity, version, setVersion, growMask, setGrowMask, directions, setDirections, searchPrompt,
+          setSearchPrompt }} />
 
           {/* 🔹 Toggle Upload Image Section */}
           {model.upload ? (
@@ -188,7 +191,7 @@ export default function GenerateImage() {
               Uploading is not available for this model
             </div>
           )}
-          {["erase"].includes(model.model) && <MaskUploader maskFileRef={maskFileRef} handleFileChange={handleFileChange} setMaskFile={setMaskFile}  />}
+          {["erase", "inpaint"].includes(model.model) && <MaskUploader maskFileRef={maskFileRef} handleFileChange={handleFileChange} setMaskFile={setMaskFile}  />}
 
           {/* 🔹 Toggle Image Gallery Section */}
           <div className="relative flex items-center justify-center my-6 cursor-pointer" onClick={toggleImageGallery}>
@@ -202,7 +205,7 @@ export default function GenerateImage() {
 
           {imageGallery && (
             <div className="flex justify-center">
-              <DisplayImage userId={userId} setSelectedImage={setSelectedImage} selectedImage={selectedImage} images={images} setImages={setImages} strength={strength} setStrength={setStrength} />
+              <DisplayImage userId={userId} model={model} setSelectedImage={setSelectedImage} selectedImage={selectedImage} images={images} setImages={setImages} strength={strength} setStrength={setStrength} />
             </div>
           )}
 

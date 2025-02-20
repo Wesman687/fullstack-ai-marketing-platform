@@ -73,7 +73,7 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({ isOpen, image, onCl
   const handleDeleteConfirm = async () => {
     if (!currentImage) return;
     setIsDeleting(true);
-    await deleteImage(currentImage.id!, images, setImages);
+    await deleteImage(currentImage.id!, images, setImages);    
     setIsDeleting(false);
     showNext() // Close the viewer after deletion
   };

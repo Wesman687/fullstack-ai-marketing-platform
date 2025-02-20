@@ -1,11 +1,11 @@
-import { ImageModel } from "@/lib/imageprops";
+import { ImageModel, ModelProps } from "@/lib/imageprops";
 import axios from "axios";
 import toast from "react-hot-toast";
 
 interface EditImageProps {
   prompt: string;
   format: string;
-  model: { model: string };
+  model: ModelProps;
   maskFile: File | null;
   selectedImage: string | null;
   images: ImageModel[];
@@ -14,6 +14,9 @@ interface EditImageProps {
   style: string;
   negativePrompt: string;
   growMask: number;
+  searchPrompt: string;
+  creativity: number;
+  directions: { left: number; right: number; up: number; down: number };
   setImages: React.Dispatch<React.SetStateAction<ImageModel[]>>;
   setImage: (image: ImageModel) => void;
   setLoading: (loading: boolean) => void;
@@ -38,8 +41,11 @@ export const editImageGenerator = async (props: EditImageProps) => {
     setImage,
     setLoading,
     setError,
+    creativity,
     setIsViewerOpen,
     setImageGallery,
+    directions,
+    searchPrompt,
   } = props;
 
   // ✅ Validate required fields
@@ -48,10 +54,27 @@ export const editImageGenerator = async (props: EditImageProps) => {
     toast.error("Please select an image to edit.");
     return;
   }
-  if (!prompt.trim()) {
+  if (
+    model.model === "search-and-replace" && 
+    selectedImage.trim().toLowerCase().endsWith(".jpg") || 
+    selectedImage.trim().toLowerCase().endsWith(".jpeg")
+  ) {
+    setError("Please select a PNG or WebP image for the search-and-replace model.");
+    return;
+  }
+  if (!prompt.trim() && model.model !== "inpaint") {
     setError("Prompt cannot be empty.");
     setLoading(false);
     return;
+  }
+  if (model.async){
+    toast.error("Asynchronous models are not supported for editing images.");
+    return
+  }
+  if (model.model === "outpaint" && !(directions.left || directions.right || directions.up || directions.down)){{
+    toast.error("Please select a direction to outpaint the image.");
+    return
+  }
   }
 
   setLoading(true);
@@ -63,9 +86,15 @@ export const editImageGenerator = async (props: EditImageProps) => {
     formData.append("format", format);
     formData.append("model", model.model);
     formData.append("style", style);
-    formData.append("negative_prompt", negativePrompt);
+    formData.append("creativity", creativity.toString());
+    formData.append("negativePrompt", negativePrompt);
     formData.append("user_id", userId || "default_user");
-    formData.append("grow_mask", growMask.toString());
+    formData.append("growMask", growMask.toString());
+    formData.append("searchPrompt", searchPrompt);
+    formData.append("left", directions.left.toString());
+    formData.append("right", directions.right.toString());
+    formData.append("up", directions.up.toString());
+    formData.append("down", directions.down.toString());
     formData.append(
       "seed",
       Math.round((1 - seedPercentage / 100) * 4294967294).toString()
@@ -90,6 +119,7 @@ export const editImageGenerator = async (props: EditImageProps) => {
       formData,
       {
         headers: { "Content-Type": "multipart/form-data", Accept: "image/*" },
+        timeout: 120000, 
       }
     );
 

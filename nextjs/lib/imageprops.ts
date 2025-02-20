@@ -75,13 +75,112 @@ export interface ModelProps {
   },
   {
       model: "upscale3",
-      name: "Creative Upscale (Coming Soon?)",
+      name: "Creative Upscale (Coming Soon)",
       desc: "The service can upscale highly degraded images (lower than 1 megapixel) with a creative twist to provide high resolution results.",
       action: "upscale",
       upload: true,
       uploadRequired: true,
       async: true,
   },
+  {
+      model: "erase",
+      name: "Erase Unwanted Objects",
+      desc: "3 credits. The Erase service removes unwanted objects, such as blemishes on portraits or items on desks, using image masks.",
+      action: "edit",
+      upload: true,
+      uploadRequired: true,
+      async: false,
+  },
+  {
+      model: "inpaint",
+      name: "Fill in or Replace",
+      desc: "3 credits. Intelligently modify images by filling in or replacing specified areas with new content based on the content of a mask image.",
+      action: "edit",
+      upload: true,
+      uploadRequired: true,
+      async: false,
+  },
+  {
+      model: "outpaint",
+      name: "Outpaint - Fill in space",
+      desc: "4 credits. The Outpaint service inserts additional content in an image to fill in the space in any direction. Compared to other automated or manual attempts to expand the content in an image, the Outpaint service should minimize artifacts and signs that the original image has been edited.",
+      action: "edit",
+      upload: true,
+      uploadRequired: true,
+      async: false,
+  },
+  {
+      model: "search-and-replace",
+      name: "Search and Replace",
+      desc: "4 credits. The Search and Replace service is a specific version of inpainting that does not require a mask. Instead, users can leverage a search_prompt to identify an object in simple language to be replaced. The service will automatically segment the object and replace it with the object requested in the prompt.",
+      action: "edit",
+      upload: true,
+      uploadRequired: true,
+      async: false,
+  },
+  {
+      model: "search-and-recolor",
+      name: "Search and Recolor",
+      desc: "5 credits. The Search and Recolor service provides the ability to change the color of a specific object in an image using a prompt. This service is a specific version of inpainting that does not require a mask. The Search and Recolor service will automatically segment the object and recolor it using the colors requested in the prompt.",
+      action: "edit",
+      upload: true,
+      uploadRequired: true,
+      async: false,
+  },
+  {
+      model: "remove-background",
+      name: "Remove Background",
+      desc: "2 credits. The Remove Background service accurately segments the foreground from an image and implements and removes the background.",
+      action: "edit",
+      upload: true,
+      uploadRequired: true,
+      async: false,
+  },
+  {
+      model: "replace-background-and-relight",
+      name: "Replace Background & Relight (Coming Soon)",
+      desc: "8 credits. The Replace Background and Relight edit service lets users swap backgrounds with AI-generated or uploaded images while adjusting lighting to match the subject. This new API provides a streamlined image editing solution and can serve e-commerce, real estate, photography, and creative projects.",
+      action: "edit",
+      upload: true,
+      uploadRequired: true,
+      async: true,
+  },
+  {
+      model: "sketch",
+      name: "Sketch to Image",
+      desc: "3 credits. This service offers an ideal solution for design projects that require brainstorming and frequent iterations. It upgrades rough hand-drawn sketches to refined outputs with precise control. For non-sketch images, it allows detailed manipulation of the final appearance by leveraging the contour lines and edges within the image.",
+      action: "edit",
+      upload: true,
+      uploadRequired: true,
+      async: false,
+  },
+  {
+      model: "structure",
+      name: "Maintain Structure",
+      desc: "3 credits. This service excels in generating images by maintaining the structure of an input image, making it especially valuable for advanced content creation scenarios such as recreating scenes or rendering characters from models.",
+      action: "edit",
+      upload: true,
+      uploadRequired: true,
+      async: false,
+  },
+  {
+      model: "style",
+      name: "Style of image",
+      desc: "4 credits. This service extracts stylistic elements from an input image (control image) and uses it to guide the creation of an output image based on the prompt. The result is a new image in the same style as the control image.",
+      action: "edit",
+      upload: true,
+      uploadRequired: true,
+      async: false,
+  },
+  {
+      model: "3d",
+      name: "3D Imaging",
+      desc: "2 credits. Stable Fast 3D generates high-quality 3D assets from a single 2D input image.",
+      action: "edit",
+      upload: true,
+      uploadRequired: true,
+      async: false,
+  }
 ];
 
   export const versions = [
@@ -110,4 +209,11 @@ export interface ModelProps {
     sort_order: number
     uploadRequired: boolean; 
 
+  }
+
+  export interface DirectionalModel {
+    left: number,
+    right: number,
+    up: number,
+    down: number,
   }

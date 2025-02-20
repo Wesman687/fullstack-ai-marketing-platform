@@ -2,7 +2,7 @@
 import { Menu } from 'lucide-react'; // ✅ Import Download Icon
 import React from 'react';
 import ImageGallery from './ImageGallery';
-import { ImageModel } from '@/lib/imageprops';
+import { ImageModel, ModelProps } from '@/lib/imageprops';
 
 interface DisplayImageProps {
     userId: string | null;
@@ -12,14 +12,15 @@ interface DisplayImageProps {
     setImages: (images: ImageModel[]) => void;
     strength: number;
     setStrength: (strength: number) => void;
+    model: ModelProps
 }
 
-function DisplayImage({ userId, setSelectedImage, selectedImage, setImages, images, strength, setStrength }: DisplayImageProps) {
+function DisplayImage({ userId, setSelectedImage, selectedImage, setImages, images, strength, setStrength, model }: DisplayImageProps) {
 
     return (
         <div>
             {/* 🔹 Strength Slider */}
-            <div className="mb-4 flex flex-col items-center">
+            {(model.action === "generate" && model.model !== "core" )&& <div className="mb-4 flex flex-col items-center">
                 <div className='flex'>
                     <label htmlFor="strength-slider" className="text-gray-700 font-semibold mb-2">
                         Strength: {strength.toFixed(1)}
@@ -42,11 +43,10 @@ function DisplayImage({ userId, setSelectedImage, selectedImage, setImages, imag
                     onChange={(e) => setStrength(parseFloat(e.target.value))}
                     className="w-full md:w-2/3 cursor-pointer accent-blue-500"
                 />
-            </div>
+            </div>}
 
             {/* ✅ Filter Buttons */}
             <ImageGallery selectedImage={selectedImage} userId={userId} images={images} setImages={setImages} setSelectedImage={setSelectedImage} />
-
         </div>
     );
 }

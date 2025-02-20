@@ -14,6 +14,7 @@ import ModelSelect from './GenSelectors/ModelSelect'
 import GenerateButtonContainer from './GenSelectors/GenerateButtonContainer'
 import EnableSuggestions from './GenSelectors/EnableSuggestions'
 import GrowMask from './GenSelectors/GrowMask'
+import DirectionContainer from './GenSelectors/DirectionContainer'
 
 interface ImageGenSelectorProps {
     model: ModelProps
@@ -41,13 +42,17 @@ interface ImageGenSelectorProps {
     setVersion: (version: string) => void
     growMask: number
     setGrowMask: (growMask: number) => void
+    directions: { left: number; right: number; up: number; down: number }
+    setDirections: (directions: { left: number; right: number; up: number; down: number }) => void
+    searchPrompt: string
+    setSearchPrompt: (searchPrompt: string) => void
 
 }
 
 function ImageGenSelector({ model, setModel, aspectRatio, setAspectRatio, style, setStyle, format,
     setFormat, handleGenerateImage, loading, error, prompt, setPrompt, negativePrompt, setNegativePrompt,
-    showNegative, setShowNegative, seedPercentage, setSeedPercentage, creativity, setCreativity, version, setVersion,
-growMask, setGrowMask }: ImageGenSelectorProps) {
+    showNegative, setShowNegative, seedPercentage, setSeedPercentage, creativity, setCreativity, version, setVersion, 
+growMask, setGrowMask, directions, setDirections, searchPrompt, setSearchPrompt }: ImageGenSelectorProps) {
     const [promptError, setPromptError] = useState<{ prompt: boolean; negativePrompt: boolean }>({
         prompt: false,
         negativePrompt: false,
@@ -59,15 +64,17 @@ growMask, setGrowMask }: ImageGenSelectorProps) {
     const [showSuggestion, setShowSuggestion] = useState(false);
     const [negSuggestion, setNegSuggestion] = useState<string | null>(null);
     const [showNegSuggestion, setShowNegSuggestion] = useState(false);
+    const [searchSuggestion, setSearchSuggestion] = useState<string | null>(null);
+    const [showSearchSuggestion, setShowSearchSuggestion] = useState(false);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>, type: "prompt" | "negativePrompt") => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>, type: "prompt" | "negativePrompt"| "searchPrompt") => {
         const value = e.target.value;
         setPromptError(prev => ({
             ...prev,
             [type]: value.length > MAX_CHARACTERS,
         }));
-
         if (type === "prompt") setPrompt(value);
+        else if (type === "searchPrompt") setSearchPrompt(value);
         else setNegativePrompt(value);
 
         // ✅ Reset AI suggestion state
@@ -86,7 +93,7 @@ growMask, setGrowMask }: ImageGenSelectorProps) {
     };
 
     // ✅ Function to fetch AI-generated prompt suggestions
-    const getAISuggestion = async (currentPrompt: string, type: "prompt" | "negativePrompt") => {
+    const getAISuggestion = async (currentPrompt: string, type: "prompt" | "negativePrompt" | "searchPrompt") => {
         if (enableSuggestions) {
             try {
                 const response = await axios.post(`${process.env.NEXT_PUBLIC_API_IMAGE_GEN}/image/generate-prompt-hint`, { prompt: currentPrompt, type });
@@ -94,7 +101,11 @@ growMask, setGrowMask }: ImageGenSelectorProps) {
                     if (type === "prompt") {
                         setSuggestion(response.data.improved_prompt);
                         setShowSuggestion(true);
-                    } else {
+                    } else if (type === "searchPrompt") {
+                        setSearchSuggestion(response.data.improved_prompt);
+                        setShowSearchSuggestion(true);
+                    }
+                        else {
                         setNegSuggestion(response.data.improved_prompt);
                         setShowNegSuggestion(true);
                     }
@@ -112,27 +123,32 @@ growMask, setGrowMask }: ImageGenSelectorProps) {
 
             <div className="mt-2 flex items-center gap-3 justify-evenly w-full">
                 {/* Format Selection */}
-                {["core", "ultra", "fast", "creative", "sd3", "conservative", "erase", "inpaint"].includes(model.model) && "upscale1" && <ImageFormat format={format} setFormat={setFormat} formats={formats} />}
+                {["core", "ultra", "fast", "creative", "sd3", "conservative", "erase", "inpaint", "outpaint", "search-and-recolor", "remove-background", "search-and-replace"].includes(model.model) && "upscale1" && <ImageFormat format={format} setFormat={setFormat} formats={formats} />}
                 {/* Aspect Ratio Selection */}
                 {["core", "ultra"].includes(model.model) && <AspectRatio aspectRatio={aspectRatio} setAspectRatio={setAspectRatio} />}
                 {/* Style Selection */}
-                {["core", "ultra", "creative", "sd3", "inpaint"].includes(model.model) && <GenStyles style={style} setStyle={setStyle} />}
+                {["core", "ultra", "creative", "sd3", "inpaint", "outpaint", "search-and-recolor", "search-and-replace"].includes(model.model) && <GenStyles style={style} setStyle={setStyle} />}
                 {/* SD3 Versions*/}
                 {["sd3"].includes(model.model) && <SdVersion version={version} setVersion={setVersion} />}
             </div>
             <div className='flex gap-4'>
                 {/*Creativity Slider*/}
-                {["conservative", "creative"].includes(model.model) && <CreativitySlider creativity={creativity} setCreativity={setCreativity} />}
+                {["conservative", "creative", "outpaint"].includes(model.model) && <CreativitySlider creativity={creativity} setCreativity={setCreativity} />}
                 {/* Seed Slider */}
-                {["core", "ultra", "conservative", "creative", "sd3", "erase", "inpaint"].includes(model.model) && <SeedSelector seedPercentage={seedPercentage} setSeedPercentage={setSeedPercentage} />}
+                {["core", "ultra", "conservative", "creative", "sd3", "erase", "inpaint", "outpaint", "search-and-recolor"].includes(model.model) && <SeedSelector seedPercentage={seedPercentage} setSeedPercentage={setSeedPercentage} />}
                 {/* Grow Mask */}
-                {["erase", "inpaint"].includes(model.model) && <GrowMask growMask={growMask} setGrowMask={setGrowMask} />}
+                {["erase", "inpaint", "search-and-recolor"].includes(model.model) && <GrowMask growMask={growMask} setGrowMask={setGrowMask} />}
             </div>
+            {["outpaint"].includes(model.model) && <DirectionContainer directions={directions} setDirections={setDirections} />}
+
 
             {/* Prompt Input */}
-            <GenPromptInput prompt={prompt} setPrompt={setPrompt} promptError={promptError} handleInputChange={handleInputChange} />
+            <GenPromptInput prompt={prompt} setPrompt={setPrompt} promptError={promptError} handleInputChange={handleInputChange} type="prompt" />
+            {["search-and-replace"].includes(model.model) && <><h1 className='text-center text-xl font-semibold mt-2'>Search Prompt</h1>
+            <GenPromptInput prompt={searchPrompt} setPrompt={setSearchPrompt} promptError={promptError} handleInputChange={handleInputChange} type="searchPrompt" /></>}
+            
             {/* Negative Prompt Input */}
-            {["core", "ultra", "conservative", "creative", "sd3", "inpaint"].includes(model.model) && <GenNegativePrompts showNegative={showNegative} setShowNegative={setShowNegative} negativePrompt={negativePrompt} promptError={promptError} handleInputChange={handleInputChange} />}
+            {["core", "ultra", "conservative", "creative", "sd3", "inpaint", "search-and-recolor", "search-and-replace"].includes(model.model) && <GenNegativePrompts showNegative={showNegative} setShowNegative={setShowNegative} negativePrompt={negativePrompt} promptError={promptError} handleInputChange={handleInputChange} />}
             
 
             {/* AI Prompt Suggestions */}
@@ -147,6 +163,15 @@ growMask, setGrowMask }: ImageGenSelectorProps) {
                 enableSuggestions={enableSuggestions} 
                 setPrompt={setNegativePrompt} // ✅ Set negative prompt instead
                 setEnableSuggestions={setEnableSuggestions} 
+            />
+            {/* AI Search Prompt Suggestions */}
+            <PromptSuggestions
+                suggestion={searchSuggestion}
+                showSuggestion={showSearchSuggestion}
+                setShowSuggestion={setShowSearchSuggestion}
+                enableSuggestions={enableSuggestions}
+                setPrompt={setSearchPrompt} // ✅ Set search prompt instead
+                setEnableSuggestions={setEnableSuggestions}
             />
             <GenerateButtonContainer handleGenerateImage={handleGenerateImage} loading={loading} />
 
