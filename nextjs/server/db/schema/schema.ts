@@ -131,10 +131,9 @@ export const stripeCustomersTable = mysqlTable("stripe_customers", {
 
 export const subscriptionsTable = mysqlTable("subscriptions", {
   id: varchar("id", { length: 50 }).primaryKey().default(sql`(UUID())`),
-  stripeCustomerId: varchar("stripe_customer_id", { length: 36 })
+  stripeCustomerId: varchar("stripe_customer_id", { length: 100 })
     .notNull()
-    .unique()
-    .references(() => stripeCustomersTable.id, { onDelete: "cascade" }),
+    .unique(),
   userId: varchar("user_id", { length: 50 }).notNull(),
 })
 
