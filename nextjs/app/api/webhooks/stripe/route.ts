@@ -18,6 +18,10 @@ export async function POST(req: Request) {
         if (!webhookSecret) {
           throw new Error("Webhook secret is missing");
         }
+    } catch (error) {
+        console.error("Error verifying webhook signature", error)
+        return new Response("Webhook signature verification failed", { status: 400 })
+    }
       
     console.log(`Received webhook with payload: ${body}`)
 
