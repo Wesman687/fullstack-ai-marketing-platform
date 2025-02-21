@@ -1,20 +1,28 @@
+import { webhookSecret } from "@/lib/config"
 import stripe from "@/lib/stripe"
 import { db } from "@/server/db"
 import { subscriptionsTable } from "@/server/db/schema/schema"
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
-export async function POST(req: Request){
+export async function POST(req: Request) {
+
 
     const body = await req.text()
     const signature = req.headers.get('Stripe-Signature') as string
+    console.log("🔐 Webhook Secret:", webhookSecret ? "Loaded" : "Not Loaded");
+    console.log("📝 Stripe Signature Header:", signature);
 
+    try {
+        if (!webhookSecret) {
+          throw new Error("Webhook secret is missing");
+        }
+      
     console.log(`Received webhook with payload: ${body}`)
 
     let event: Stripe.Event
-    
+
 
     try {
         event = stripe.webhooks.constructEvent(body, signature, webhookSecret!)
@@ -26,7 +34,7 @@ export async function POST(req: Request){
     console.log(`Processing ${event.type} event`)
 
     try {
-        switch  (event.type) {
+        switch (event.type) {
             case "customer.subscription.created":
                 const subscription = event.data.object as Stripe.Subscription
                 await handleNewSubscription(subscription)
@@ -38,7 +46,7 @@ export async function POST(req: Request){
     } catch (error) {
         console.error("Error processing webhook event", error)
         return new Response("Error processing webhook event", { status: 500 })
-        
+
     }
 }
 
@@ -70,7 +78,7 @@ async function handleNewSubscription(subscription: Stripe.Subscription) {
         const database = await db()
         await database.drizzle.insert(subscriptionsTable).values(subscriptionData)
         database.release()
-        
+
     } catch (error) {
         console.error("Error retrieving customer", error)
         throw error
