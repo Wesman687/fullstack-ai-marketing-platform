@@ -105,6 +105,47 @@ export const templatePromptsTable = mysqlTable("template_prompts", {
 });
 
 
+export const generatedContentTable = mysqlTable("generated_content", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  projectId: varchar("project_id", { length: 36 })
+    .notNull()
+    .references(() => projectsTable.id, {
+      onDelete: "cascade",
+    }),
+  name: text("name").notNull(),
+  result: text("result").notNull(),
+  order: int("order").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .notNull()
+    .defaultNow()
+    .onUpdateNow(),
+});
+
+export const stripeCustomersTable = mysqlTable("stripe_customers", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  userId: varchar("user_id", { length: 50 }).notNull(),
+  stripeCustomerId: varchar("stripe_customer_id", { length: 50 }).notNull(),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const subscriptionsTable = mysqlTable("subscriptions", {
+  id: varchar("id", { length: 50 }).primaryKey().default(sql`(UUID())`),
+  stripeCustomerId: varchar("stripe_customer_id", { length: 36 })
+    .notNull()
+    .unique()
+    .references(() => stripeCustomersTable.id, { onDelete: "cascade" }),
+  userId: varchar("user_id", { length: 50 }).notNull(),
+})
+
+export const GeneratedContentRelations = relations(generatedContentTable, ({ one }) => ({
+  project: one(projectsTable, {
+    fields: [generatedContentTable.projectId],
+    references: [projectsTable.id],
+  }),
+}));
+
+
 export const templatePromptRelations = relations(templatePromptsTable, ({ one }) => ({
   template: one(templatesTable, {
     fields: [templatePromptsTable.templateId],
@@ -157,11 +198,16 @@ export type Project = typeof projectsTable.$inferSelect;
 export type Asset = typeof assetTable.$inferSelect;
 export type InsertAsset = typeof assetTable.$inferInsert;
 export type AssetProcessingJob = typeof assetProcessingJobTable.$inferSelect;
-export type InsertAssetProcessingJob =
-  typeof assetProcessingJobTable.$inferInsert;
+export type InsertAssetProcessingJob = typeof assetProcessingJobTable.$inferInsert;
 export type Prompt = typeof promptsTable.$inferSelect;
 export type InsertPrompt = typeof promptsTable.$inferInsert;
 export type Template = typeof templatesTable.$inferSelect;
 export type InsertTemplate = typeof templatesTable.$inferInsert;
 export type TemplatePrompt = typeof templatePromptsTable.$inferSelect;
 export type InsertTemplatePrompt = typeof templatePromptsTable.$inferInsert;
+export type GeneratedContent = typeof generatedContentTable.$inferSelect;
+export type InsertGeneratedContent = typeof generatedContentTable.$inferInsert;
+export type StripeCustomer = typeof stripeCustomersTable.$inferSelect;
+export type InsertStripeCustomer = typeof stripeCustomersTable.$inferInsert;
+export type Subscription = typeof subscriptionsTable.$inferSelect;
+export type InsertSubscription = typeof subscriptionsTable.$inferInsert;

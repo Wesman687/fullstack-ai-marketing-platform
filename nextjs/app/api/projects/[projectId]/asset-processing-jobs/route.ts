@@ -22,8 +22,6 @@ export async function GET(request: NextRequest) {
     const database = await db();
 
     try {
-
-
         const assets = await database.drizzle
             .select()
             .from(assetProcessingJobTable)

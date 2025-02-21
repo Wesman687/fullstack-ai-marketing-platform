@@ -2,7 +2,8 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/server/db";
-import {  projectsTable, templatesTable } from "@/server/db/schema/schema";
+import { projectsTable, templatesTable } from "@/server/db/schema/schema";
+import { redirect } from "next/navigation";
 export async function createProject(formData: FormData) {
     const { userId } = await auth();
     if (!userId) {
@@ -10,8 +11,7 @@ export async function createProject(formData: FormData) {
     }
 
     const database = await db();
-    try {
-        const newId = crypto.randomUUID();
+    const newId = crypto.randomUUID();
 
     // ✅ Extract `title` from formData
     const title = formData.get("title") as string | null;
@@ -20,13 +20,10 @@ export async function createProject(formData: FormData) {
         id: newId,
         title: title || "Untitled Project", // ✅ Default to "Untitled Project" if empty
         userId,
-    });
-    } catch (error) {
-        console.error("❌ Error creating project:", error);
-        throw new Error("Failed to create project");
-    } finally {
-        database.release();
-    }
+    }); // ✅ Redirect to new project
+
+
+    redirect(`/project/${newId}`);
 }
 
 export async function createTemplate(formData: FormData) {

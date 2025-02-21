@@ -11,7 +11,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 const ManageUploadStep = lazy(() => import('../upload-step/ManageUploadStep'))
 const ConfigurePromptsStep = lazy(() => import('../prompts/ConfigurePromptsStep'))
-const GenerateContextStep = lazy(() => import('../GenerateContextStep'))
+const GenerateContextStep = lazy(() => import('../GenerateContentStep'))
 
 const steps = [
   { name: "Upload Media", tab: "upload", component: ManageUploadStep },

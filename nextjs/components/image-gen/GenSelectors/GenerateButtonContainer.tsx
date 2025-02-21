@@ -15,7 +15,7 @@ function GenerateButtonContainer({ handleGenerateImage, loading }: GenerateButto
                     {loading ? (
                         <>
                             <Hourglass className="animate-pulse h-5 w-5 text-yellow-500" /> {/* ✅ Hourglass effect */}
-                            <span>Generating...</span>
+                            <span className='animate-pulse'>Generating...</span>
                         </>
                     ) : (
                         "Generate Image"

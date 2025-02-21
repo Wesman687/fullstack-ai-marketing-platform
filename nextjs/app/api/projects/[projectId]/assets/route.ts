@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
             .from(assetTable)
             .where(and(eq(assetTable.projectId, projectId)));
         
-        return NextResponse.json({ assets }, { status: 200 });
+        return NextResponse.json( assets , { status: 200 });
     } catch (error) {
         console.log(error)
         return NextResponse.json({ error: "Assets not found or unauthorized" }, { status: 404 });

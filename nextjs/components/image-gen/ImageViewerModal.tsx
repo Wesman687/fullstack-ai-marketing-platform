@@ -40,7 +40,7 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({ isOpen, image, onCl
       setCurrentIndex(index >= 0 ? index : 0);
       setCurrentImage(filteredImages[index] || image); // ✅ Ensure a valid image is displayed
     }
-  }, [image, images, filter])
+  }, [image, images, filter, filteredImages])
   useEffect(() => {
     if (filteredImages.length > 0) {
       setCurrentIndex(0); // ✅ Reset index to first image
@@ -48,7 +48,7 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({ isOpen, image, onCl
     } else {
       setCurrentImage(null); // ✅ No images? Show empty state
     }
-  }, [filter]);
+  }, [filter, filteredImages]);
 
   if (!isOpen) return null;
 

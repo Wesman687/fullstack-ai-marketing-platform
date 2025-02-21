@@ -159,7 +159,7 @@ export default function GenerateImage() {
           negativePrompt, setNegativePrompt, showNegative, setShowNegative, seedPercentage, setSeedPercentage, 
           handleGenerateImage, creativity, setCreativity, version, setVersion, growMask, setGrowMask, directions, setDirections, searchPrompt,
           setSearchPrompt }} />
-
+          
           {/* 🔹 Toggle Upload Image Section */}
           {model.upload ? (
             <>

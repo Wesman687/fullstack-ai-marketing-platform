@@ -198,7 +198,7 @@ export default function ImageGallery({ userId, images, setImages, selectedImage,
         
             fetchImages();
         }
-    }, [userId,]);
+    }, [setImages, userId]);
 
     // ✅ Drag-and-Drop Setup
     const sensors = useSensors(useSensor(PointerSensor), useSensor(TouchSensor));

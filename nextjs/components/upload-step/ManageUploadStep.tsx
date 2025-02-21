@@ -44,8 +44,8 @@ function ManageUploadStep({ projectId }: ManageUploadStepProps) {
       setIsLoading(true)
     }
     try {
-      const response = await axios.get<{ assets: Asset[] }>(`/api/projects/${projectId}/assets`)
-      setUploadedAssets(response.data.assets || [])
+      const response = await axios.get<Asset[]>(`/api/projects/${projectId}/assets`)
+      setUploadedAssets(response.data)
     } catch (error) {
       console.error('❌ Failed to fetch assets', error)
       setUploadedAssets([])

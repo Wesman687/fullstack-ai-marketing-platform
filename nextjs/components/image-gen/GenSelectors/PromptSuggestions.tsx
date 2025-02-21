@@ -34,7 +34,7 @@ const PromptSuggestions = ({  setPrompt, suggestion,  setShowSuggestion, showSug
             console.log("Removing event listener for click detection.");
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, [showSuggestion]);
+    }, [setShowSuggestion, showSuggestion]);
     return (
         <div className="relative w-full">
             {/* ✅ Prompt Input */}
