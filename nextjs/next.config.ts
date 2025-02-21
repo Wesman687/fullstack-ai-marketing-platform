@@ -8,6 +8,7 @@ const nextConfig = {
       },
     ],
   },
+  
   serverActions: true, // ✅ Enable Server Actions (Only in Next.js 14+)
   logging: {
     warn: (message: string) => {
@@ -19,4 +20,8 @@ const nextConfig = {
   },
 
 };
-module.exports = nextConfig;
+module.exports = {
+  api: {
+    bodyParser: false, // Disable body parsing for Stripe webhook validation
+  },
+};

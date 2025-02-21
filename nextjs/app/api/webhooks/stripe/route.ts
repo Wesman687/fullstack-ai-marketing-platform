@@ -5,6 +5,11 @@ import { subscriptionsTable } from "@/server/db/schema/schema"
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
 
+export const config = {
+    api: {
+      bodyParser: false, // Ensure Next.js doesn't parse the body
+    },
+  };
 
 export async function POST(req: Request) {
 
