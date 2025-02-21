@@ -5,7 +5,8 @@ const isPublicRoute = createRouteMatcher([
   "/",
   "/pricing",
   "/api/upload",
-  "/api/user"
+  "/api/user",
+  "/api/webhooks/stripe"
 ])
 const isSecureRoute = createRouteMatcher([
   "/api/asset-processing-job",
@@ -18,6 +19,10 @@ if (!SERVER_API_KEY) {
 }
 
 export default clerkMiddleware(async (auth, request) => {
+  if (request.nextUrl.pathname === "/api/webhooks/stripe") {
+    // Skip authentication for Stripe webhooks
+    return NextResponse.next();
+  }
   if (request.url.startsWith("http://api.paul-miracle.info:5000")) {
     return NextResponse.next();
   }
