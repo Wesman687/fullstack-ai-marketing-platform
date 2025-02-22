@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 
 import TemplateList from "@/components/template/TemplateList";
 import { Button } from "@/components/ui/button";

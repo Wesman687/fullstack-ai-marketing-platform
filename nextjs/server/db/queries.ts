@@ -17,9 +17,9 @@ export async function getProjectsForUser() {
             where:(eq(projectsTable.userId, userId)),
             orderBy:(desc(projectsTable.updatedAt))
         })
+        database.release();
         return projects;
     
-        database.release();
     
 }
 

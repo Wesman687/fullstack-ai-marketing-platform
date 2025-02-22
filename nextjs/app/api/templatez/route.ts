@@ -14,12 +14,11 @@ export async function GET() {
     }
 }
 
-export async function POST(request: Request) {
+export async function POST() {
     
-    const formData = await request.formData();
 
     try {
-        const template = await createTemplate(formData);
+        const template = await createTemplate();
         return NextResponse.json({templateId:template.newTemplateId}, { status: 200 });
     } catch (error) {
         console.error("❌ Error creating template:", error);
