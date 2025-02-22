@@ -26,31 +26,27 @@ export async function createProject(formData: FormData) {
     redirect(`/project/${newId}`);
 }
 
-export async function createTemplate(formData: FormData) {
+export async function createTemplate() {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("User not found");
     }
 
     const database = await db();
-    try {
-        const newId = crypto.randomUUID();
 
-        // ✅ Extract `title` from formData
-        const title = formData.get("title") as string | null;
+    const newId = crypto.randomUUID();
 
-        await database.drizzle.insert(templatesTable).values({
-            id: newId,
-            title: title || "Untitled Template",
-            userId,
-        });
-        return {
-            newTemplateId: newId,
-        };
-    } catch (error) {
-        console.error("❌ Error creating template:", error);
-        throw new Error("Failed to create template");
-    } finally {
-        database.release();
-    }
+    // ✅ Extract `title` from formData
+
+    await database.drizzle.insert(templatesTable).values({
+        id: newId,
+        title:  "New Template",
+        userId,
+    });
+    database.release();
+    return {
+        newTemplateId: newId,
+    };
+
+
 }

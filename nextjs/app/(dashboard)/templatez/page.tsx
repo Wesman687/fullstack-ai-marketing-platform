@@ -1,38 +1,15 @@
-'use client'
+
 import TemplateList from "@/components/template/TemplateList";
 import { Button } from "@/components/ui/button";
-import { Template } from "@/server/db/schema/schema";
-import axios from "axios";
+import { getTemplatesForUser } from "@/server/db/queries";
+import { createTemplate } from "@/server/mutation";
 import { Plus } from "lucide-react";
-import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
 
-export default  function TemplatesPage() {
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const router = useRouter();
+export default async function TemplatesPage() {
+  const templates = await getTemplatesForUser()
 
-  useEffect(() => {
-    const fetchTemplates = async () => {
-      const result = await axios.get("/api/templatez");
-      setTemplates(result.data);
-    };
-    fetchTemplates();
-  }, []);
 
-  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); // Prevent default form submission
-    const formData = new FormData(event.currentTarget);
-
-    try {
-      const response = await axios.post("/api/templatez", formData); 
-      // Redirect after successful template creation
-      router.push(`/template/${response.data.templateId}`); // Or however you access it
-    } catch (error) {
-      // Handle errors (display message, etc.)
-      console.error("Error creating template:", error);
-      alert("Failed to create template. Please try again.");
-    } 
-  };  
+  
 
   return (
     <div className="w-full">
@@ -46,7 +23,7 @@ export default  function TemplatesPage() {
               View and manage your templates and prompts here
             </p>
           </div>
-          <form onSubmit={handleFormSubmit} className="w-full sm:w-auto">
+          <form onSubmit={createTemplate} className="w-full sm:w-auto">
             <Button type="submit" className="rounded-3xl text-base w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-1" strokeWidth={3} />
               New Template

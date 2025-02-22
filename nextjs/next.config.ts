@@ -20,8 +20,5 @@ const nextConfig = {
   },
 
 };
-module.exports = {
-  api: {
-    bodyParser: false, // Disable body parsing for Stripe webhook validation
-  },
-};
+
+module.exports = nextConfig;

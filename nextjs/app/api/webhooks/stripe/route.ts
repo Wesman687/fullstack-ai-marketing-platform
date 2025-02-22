@@ -5,30 +5,15 @@ import { subscriptionsTable } from "@/server/db/schema/schema"
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
 
-export const config = {
-    api: {
-      bodyParser: false, // Ensure Next.js doesn't parse the body
-    },
-  };
 
 export async function POST(req: Request) {
 
 
     const body = await req.text()
     const signature = req.headers.get('Stripe-Signature') as string
-    console.log("🔐 Webhook Secret:", webhookSecret ? "Loaded" : "Not Loaded");
-    console.log("📝 Stripe Signature Header:", signature);
 
-    try {
-        if (!webhookSecret) {
-          throw new Error("Webhook secret is missing");
-        }
-    } catch (error) {
-        console.error("Error verifying webhook signature", error)
-        return new Response("Webhook signature verification failed", { status: 400 })
-    }
-      
-    console.log(`Received webhook with payload: ${body}`)
+
+    console.log(`Received webhook`)
 
     let event: Stripe.Event
 
@@ -80,9 +65,9 @@ async function handleNewSubscription(subscription: Stripe.Subscription) {
         }
 
         const subscriptionData = {
-            stripeCustomerId: subscription.customer as string,
             userId: userid,
-        }
+            stripeSubscriptionId: subscription.id,
+        };
 
         const database = await db()
         await database.drizzle.insert(subscriptionsTable).values(subscriptionData)

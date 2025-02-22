@@ -30,100 +30,161 @@ export async function GET(request: NextRequest) {
     }
 }
 
-export async function POST(request: NextRequest) {
-    const url = new URL(request.url);
-    const pathSegments = url.pathname.split("/");
-    const projectId = pathSegments[3]; // Assuming `/api/projects/[projectId]/asset-processing-jobs`
+  function estimateTokens(text: string): number {
+    const words = text.trim().split(/\s+/); // Split text by whitespace
+    return Math.ceil(words.length * 0.75);  // Rough estimate of tokens
+  }
+  
+  
+  
+  const MAX_TOKENS = 8000; // Safe buffer for GPT-4o (context window is ~10k)
 
-    if (!projectId) {
-        return NextResponse.json({ error: "Invalid Project ID" }, { status: 400 });
-    }
-
-    const database = await db()
-
-    try {
-        const project = await database.drizzle.query.projectsTable.findFirst({
-            where: eq(projectsTable.id, projectId),
-            with: {
-                assets: true,
-                prompts: true
-            }
-        })
-        if (!project) {
-            return NextResponse.json({ error: "Project not found or unauthorized" }, { status: 404 });
+  function splitTextIntoChunks(text: string): string[] {
+    const sentences = text.split(/(?<=[.!?])\s+/); // Split by sentences
+    const chunks: string[] = [];
+    let currentChunk = '';
+  
+    for (const sentence of sentences) {
+      const potentialChunk = `${currentChunk} ${sentence}`;
+      const estimatedTokens = estimateTokens(potentialChunk);
+  
+      if (estimatedTokens > MAX_TOKENS) {
+        if (currentChunk.trim()) {
+          chunks.push(currentChunk.trim());
         }
-
-        const { assets, prompts } = project;
-
-        const contentFromAssets = assets.map(asset => asset.content).join("\n");
-        const models = ["gpt-4o", "gpt-4o-mini", "gpt-4o-turbo"];
-        const generatedContentPromises = prompts.map(async (prompt) => {
-            let text = ""
-            let success = false
-
-            for (const model of models) {
-                try {
-                    const response = await generateText({
-                        model: openai(model),
-                        system: "You are a content generation assistant",
-                        prompt: `
-                        Please use the following prompt and summary to generate new content:
-                        ** PROMPT:
-                        ${prompt.prompt}
-                        ----------------
-                        ** SUMMARY:
-                        ${contentFromAssets}                        
-                        `,
-                        headers: {
-                            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
-                        }
-                    })
-                    text = response.text
-                    success = true
-                    console.log("Generated Content user model: ", model)
-                    break
-                }
-                catch (error: unknown) {
-                    // #TODO: Try to figure out what went wrong and if we can recover
-                    const err = error as Error & { statusCode?: number };
-                    console.error(`Failed to generate content using model: ${model}`, err)
-                    if (err.statusCode === 503 || err.statusCode === 429 || err.message.includes("overloaded")) {
-                        continue;
-                    } else {
-                        throw error;
-                    }
-                }
-            }
-
-            if (!success) {
-                throw new Error("Failed to generate content")
-            }
-            const uuid = uuidv4()
-            await database.drizzle.insert(generatedContentTable).values({
-                id: uuid,
-                projectId,
-                name: prompt.name,
-                result: text,
-                order: prompt.order
-            })
-            const [insertedContent] = await database.drizzle.select().from(generatedContentTable).where(eq(generatedContentTable.id, uuid))
-
-            return insertedContent
-
-        })
-
-        const insertedContentList = await Promise.all(generatedContentPromises)
-
-        return NextResponse.json(insertedContentList, { status: 200 });
-    } catch (error) {
-        console.error(error)
-        return NextResponse.json({ error: "Failed to Generate Content" }, { status: 500 });
-
-    } finally {
-        database.release();
+        currentChunk = sentence; // Start a new chunk
+      } else {
+        currentChunk = potentialChunk;
+      }
     }
-}
+  
+    if (currentChunk) {
+      chunks.push(currentChunk.trim());
+    }
+  
+    console.log("Generated Chunks:", chunks);
+    return chunks;
+  }
 
+export async function POST(request: NextRequest) {
+  console.log("Endpoint hit");
+  const url = new URL(request.url);
+  const pathSegments = url.pathname.split('/');
+  const projectId = pathSegments[3]; // Assuming `/api/projects/[projectId]/asset-processing-jobs`
+
+  if (!projectId) {
+    return NextResponse.json({ error: 'Invalid Project ID' }, { status: 400 });
+  }
+
+  const database = await db();
+
+  try {
+    const project = await database.drizzle.query.projectsTable.findFirst({
+      where: eq(projectsTable.id, projectId),
+      with: {
+        assets: true,
+        prompts: true,
+      },
+    });
+
+    if (!project) {
+      return NextResponse.json(
+        { error: 'Project not found or unauthorized' },
+        { status: 404 }
+      );
+    }
+
+    const { assets, prompts } = project;
+    console.log('Generating content for project: ', projectId);
+    const contentFromAssets = assets.map((asset) => asset.content).join('\n');
+
+    const models = ['gpt-4o', 'gpt-4o-mini', 'gpt-4o-turbo'];
+
+    const generatedContentPromises = prompts.map(async (prompt) => {
+      let text = '';
+      let success = false;
+
+      const inputPrompt = `
+        Please use the following prompt and summary to generate new content:
+        ** PROMPT:
+        ${prompt.prompt}
+        ----------------
+        ** SUMMARY:
+        ${contentFromAssets}
+      `;
+
+      // Count tokens before making a request
+      const inputChunks = await splitTextIntoChunks(inputPrompt);
+
+      // If too many tokens, split the input
+      for (const model of models) {
+        try {
+          for (const chunk of inputChunks) {
+            const response = await generateText({
+              model: openai(model),
+              system: 'You are a content generation assistant.',
+              prompt: chunk,
+              headers: {
+                Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+              },
+            });
+
+            text += response.text + '\n'; // Merge results from all chunks
+          }
+
+          success = true;
+          console.log('Generated Content using model: ', model);
+          break;
+        } catch (error: unknown) {
+          const err = error as Error & { statusCode?: number };
+          console.error(`Failed to generate content using model: ${model}`, err);
+
+          if (
+            err.statusCode === 503 ||
+            err.statusCode === 429 ||
+            err.message.includes('overloaded')
+          ) {
+            continue;
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (!success) {
+        throw new Error('Failed to generate content');
+      }
+
+      const uuid = uuidv4();
+      await database.drizzle.insert(generatedContentTable).values({
+        id: uuid,
+        projectId,
+        name: prompt.name,
+        result: text,
+        order: prompt.order,
+      });
+
+      const [insertedContent] = await database.drizzle
+        .select()
+        .from(generatedContentTable)
+        .where(eq(generatedContentTable.id, uuid));
+
+      return insertedContent;
+    });
+
+    const insertedContentList = await Promise.all(generatedContentPromises);
+
+    return NextResponse.json(insertedContentList, { status: 200 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: 'Failed to Generate Content' },
+      { status: 500 }
+    );
+  } finally {
+    database.release();
+  }
+}
 export async function DELETE(request: NextRequest) {
     const url = new URL(request.url);
     const pathSegments = url.pathname.split("/");

@@ -10,4 +10,4 @@ export const DGO_DATABASE = process.env.DGO_DATABASE;
 export const DGO_PORT = process.env.DGO_PORT;
 export const DGO_SSL = process.env.DATABASE_SSL;
 export const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
-
+export const API = process.env.NEXT_PUBLIC_API_IMAGE_GEN

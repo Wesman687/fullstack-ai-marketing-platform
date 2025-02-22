@@ -1,13 +1,20 @@
-"use client"; // ✅ Ensure it's a client component
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import CTA from "@/components/landing/CTA";
+import FAQ from "@/components/landing/FAQ";
+import Footer from "@/components/landing/Footer";
+import Header from "@/components/landing/Header";
+import Hero from "@/components/landing/Hero";
+import HowItWorks from "@/components/landing/HowItWorks";
+import React from "react";
 
 export default function LandingPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.push('/projects'); // ✅ Redirect after mount
-  }, [router]); // ✅ Runs only once after mounting
-
-  return <div>Redirecting...</div>; // Optional loading message
+  return (
+    <main>
+      <Header />
+      <Hero />
+      <HowItWorks />
+      <FAQ />
+      <CTA />
+      <Footer />
+    </main>
+  );
 }

@@ -2,35 +2,25 @@ import { auth } from "@clerk/nextjs/server";
 import { and, eq, desc } from "drizzle-orm";
 import { projectsTable, subscriptionsTable, templatesTable } from "./schema/schema";
 import { db } from ".";
-import { Stripe } from "stripe";
 import stripe from "@/lib/stripe";
 
 export async function getProjectsForUser() {
     const database = await db(); // ✅ Await the database connection
-    try {
+    
         const { userId } = await auth();
 
         if (!userId) {
             throw new Error("User not found");
         }
-
-        console.log("✅ User authenticated:", userId);
-
-        console.log("✅ Database connected successfully");
         // ✅ Run query
-        const projects = await database.drizzle
-            .select()
-            .from(projectsTable)
-            .where(eq(projectsTable.userId, userId))
-            .orderBy(desc(projectsTable.updatedAt));
-
+        const projects = await database.drizzle.query.projectsTable.findMany({
+            where:(eq(projectsTable.userId, userId)),
+            orderBy:(desc(projectsTable.updatedAt))
+        })
         return projects;
-    } catch (error) {
-        console.error("❌ Error in getProjectsForUser:", error);
-        throw new Error("error");
-    } finally {
+    
         database.release();
-    }
+    
 }
 
 export async function getProject(projectid: string) {
@@ -101,8 +91,15 @@ export async function getTemplate(templateId: string) {
         database.release();
     }
 }
+export interface SimplifiedSubscription {
+    id: string;
+    status: string;
+    cancel_at?: number | null;
+    current_period_end: number;
+  }
+  
 
-export async function getUserSubscription(): Promise<Stripe.Subscription | null> {
+export async function getUserSubscription(): Promise<SimplifiedSubscription | null> {
 
     const { userId } = await auth();
 
@@ -122,10 +119,15 @@ export async function getUserSubscription(): Promise<Stripe.Subscription | null>
             return null;
         }
 
-        const stripeSubscription = await stripe.subscriptions.retrieve(subscription.id)
+        const stripeSubscription = await stripe.subscriptions.retrieve(subscription.stripeSubscriptionId)
+        const simplifiedSubscription: SimplifiedSubscription = {
+            id: stripeSubscription.id,
+            status: stripeSubscription.status,
+            cancel_at: stripeSubscription.cancel_at,
+            current_period_end: stripeSubscription.current_period_end,
+          };
 
-
-        return stripeSubscription
+        return simplifiedSubscription
     } catch (error) {
         if (
             error instanceof Error &&

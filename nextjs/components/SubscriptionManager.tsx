@@ -1,16 +1,17 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Stripe from "stripe";
 import { Button } from "./ui/button";
 import { Box, LayoutTemplate, Star } from "lucide-react";
 import toast from "react-hot-toast";
 import { useRouter, useSearchParams } from "next/navigation";
+import { SimplifiedSubscription } from "@/server/db/queries";
 
-interface SubscriptionManagerProps {
-  subscription: Stripe.Subscription | null;
-}
 
+  interface SubscriptionManagerProps {
+    subscription: SimplifiedSubscription | null;
+  }
+  
 function SubscriptionManager({ subscription }: SubscriptionManagerProps) {
   const [isMounted, setIsMounted] = useState(false);
   const searchParams = useSearchParams();
@@ -57,7 +58,7 @@ export default SubscriptionManager;
 function SubscriptionBody({
   subscription,
 }: {
-  subscription: Stripe.Subscription | null;
+  subscription: SimplifiedSubscription | null;
 }) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -171,7 +172,7 @@ function SubscriptionBody({
 }
 
 const getSubscriptionStatus = (
-  subscription: Stripe.Subscription | null
+  subscription: SimplifiedSubscription | null
 ): string => {
   if (!subscription) return "No active subscription";
   if (subscription.status === "active" && subscription.cancel_at) {

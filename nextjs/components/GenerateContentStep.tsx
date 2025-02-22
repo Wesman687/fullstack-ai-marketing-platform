@@ -45,7 +45,8 @@ function GenerateContentStep({ projectId }: GenerateContentStepProps) {
     projectHasContent,
     projectHasPrompts,
   ]);
-
+  console.log(projectId)
+  console.log(projectHasContent, projectHasPrompts, isAssetsTokenExceeded, isPromptsTokenExceeded, isLoading, isGenerating)
   useEffect(() => {
     const fetchAllProjectData = async () => {
       setIsLoading(true);
@@ -59,7 +60,10 @@ function GenerateContentStep({ projectId }: GenerateContentStepProps) {
             axios.get<Asset[]>(`/api/projects/${projectId}/assets`),
             axios.get<Prompt[]>(`/api/projects/${projectId}/prompts`),
           ]);
-
+          
+        console.log(generatedContentResponse.data, "Generated Content")
+        console.log(assetsResponse.data, " Assets")
+        console.log(promptsResponse.data, " Prompts")
         setGeneratedContent(generatedContentResponse.data);
         setGeneratedCount(generatedContentResponse.data.length);
         setProjectHasContent(
@@ -106,7 +110,7 @@ function GenerateContentStep({ projectId }: GenerateContentStepProps) {
       if (!projectHasContent) missingItems.push("valid assets");
       if (!projectHasPrompts) missingItems.push("add prompts");
 
-      newErrorMessage = `Please ${missingItems.join(
+      newErrorMessage = `Please add ${missingItems.join(
         " and "
       )} before generating content.`;
     } else if (isAssetsTokenExceeded || isPromptsTokenExceeded) {
@@ -138,7 +142,7 @@ function GenerateContentStep({ projectId }: GenerateContentStepProps) {
       setIsGenerating(true);
 
       await axios.post<GeneratedContent[]>(
-        `/api/projects/${projectId}/generate-content`
+        `/api/projects/${projectId}/generated-content`
       );
     } catch (error) {
       console.error("Failed to generate content", error);
