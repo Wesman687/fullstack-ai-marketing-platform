@@ -7,7 +7,6 @@ import toast from 'react-hot-toast'
 import axios from 'axios'
 import { Asset, AssetProcessingJob } from '@/server/db/schema/schema'
 import { upload } from '@vercel/blob/client'
-import UploadLink from './UploadLink'
 
 interface ManageUploadStepProps {
   projectId: string
@@ -168,7 +167,6 @@ function ManageUploadStep({ projectId }: ManageUploadStepProps) {
         handleFileChange={handleFileChange}
         accept=".video/*, .mp4, .txt,.md,video/*,audio/*,text/plain,text/markdown"
       />
-      <UploadLink fetchAssets={fetchAssets} projectId={projectId}  />
       <UploadStepBody
         uploadedAssets={uploadedAssets}
         isLoading={isLoading}
