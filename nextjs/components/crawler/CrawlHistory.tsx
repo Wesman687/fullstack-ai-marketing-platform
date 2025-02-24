@@ -49,7 +49,7 @@ const CrawlHistory = () => {
     // ✅ Delete Crawl Request
     const deleteCrawlRequest = async (id: string) => {
         try {
-            await axios.delete(`/api/crawl-requests/${id}`);
+            await axios.delete(`/api/crawl/requests/${id}`);
             setCrawlRequests((prev) => prev.filter((req) => req.id !== id));
         } catch (err) {
             console.error('❌ Delete Error:', err);
@@ -59,7 +59,7 @@ const CrawlHistory = () => {
     // ✅ Download Crawl Request Data
     const downloadCrawlRequest = async (id: string, type: string,) => {
         try {
-            const response = await axios.get(`/api/crawl-results/${id}`);
+            const response = await axios.get(`/api/crawl/results/${id}`);
             const data = response.data.data;
 
             if (type === 'csv') {
@@ -124,14 +124,14 @@ const CrawlHistory = () => {
                     <tbody>
                         {crawlRequests.map((request) => (
                             <tr key={request.id} className="text-center">
-                                <td className="border p-2 whitespace-nowrap">{request.name}</td>
-                                <td className="border p-2 truncate">{request.url}</td>
+                                <td className="border p-2 max-w-[100px] truncate overflow-hidden whitespace-nowrap">{request.name}</td>
+                                <td className="border p-2 max-w-[300px] overflow-hidden truncate whitespace-nowrap">{request.url}</td>
                                 <td className="border p-2">{request.status}</td>
                                 <td className="border p-2">{(new Date(request.createdAt).toLocaleString()).slice(0,10)}</td>
                                 <td className="border p-2 flex gap-2 justify-center">
                                         <button className="bg-blue-600 text-white px-8 py-4rounded" 
                                         onClick={()=>{
-                                            
+
                                             setShowCrawlViewer(true);
                                             setCrawlId(request.id);
                                         }}>👁️ Show</button>
