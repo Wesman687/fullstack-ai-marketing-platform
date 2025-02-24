@@ -1,7 +1,8 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import CrawlViewer from './CrawlViewer';
+import CrawlHistory from './CrawlHistory';
+import toast from 'react-hot-toast';
 
 const SmartWebCrawler = () => {
   const [url, setUrl] = useState('');
@@ -10,8 +11,10 @@ const SmartWebCrawler = () => {
   const [newField, setNewField] = useState('');
   const [bulkInput, setBulkInput] = useState('');
   const [isBulkInputOpen, setIsBulkInputOpen] = useState(false);
-  const [crawledData, setCrawledData] = useState<string[]>([]);
   const [isCrawling, setIsCrawling] = useState(false);
+  const [nameOfCrawl, setNameOfCrawl] = useState('');
+  const [userId, setUserId] = useState('');
+  const [loading, setLoading] = useState(true);
 
   // ✅ Add Field
   const addField = () => {
@@ -32,7 +35,6 @@ const SmartWebCrawler = () => {
     setTag('');
     setFields([]);
     setNewField('');
-    setCrawledData([]);
     setIsCrawling(false);
   };
   const addBulkFields = () => {
@@ -54,10 +56,12 @@ const SmartWebCrawler = () => {
     }
 
     const payload = {
+      userId,
+      name: nameOfCrawl,
       url,
+      tag,
       selectors: [
-        {
-          tag,
+        {          
           fields,
         },
       ],
@@ -67,20 +71,16 @@ const SmartWebCrawler = () => {
     setIsCrawling(true);
 
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API}/dynamic-crawl`,
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API}/start-crawl`,
         payload,
         { timeout: 300000 } // ⏳ Set timeout to 5 minutes for crawling
       );
 
-      if (response.data && response.data.data) {
-        setCrawledData(response.data.data);
-        console.log('✅ Data Received:', response.data.data);
-      } else {
-        console.warn('⚠️ No data found in the response.');
-      }
+      toast.success('Crawling, Data will be ready shortly.')
     } catch (error) {
       console.error('❌ Error:', error);
+      toast.error('Failed to crawl data. Please try again.');
       if (axios.isAxiosError(error) && error.response) {
         console.error(`API Error (${error.response.status}):`, error.response.data);
       } else {
@@ -90,6 +90,21 @@ const SmartWebCrawler = () => {
       setIsCrawling(false);
     }
   };
+  useEffect(() => {
+    setLoading(true);
+    const fetchData = async () => {
+      try {
+        const { data } = await axios.get('/api/user');
+        setUserId(data.userId);
+      } catch (error) {
+        console.error("Error fetching user ID:", error);
+      } 
+      finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+},[])
 
   return (
     <>
@@ -102,6 +117,15 @@ const SmartWebCrawler = () => {
         placeholder="Enter the URL to crawl"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
+        className="border rounded p-2 w-full mb-4"
+      />
+
+      {/* Tag Input */}
+      <input
+        type="text"
+        placeholder="Enter the title of the Crawl"
+        value={nameOfCrawl}
+        onChange={(e) => setNameOfCrawl(e.target.value)}
         className="border rounded p-2 w-full mb-4"
       />
 
@@ -198,12 +222,7 @@ const SmartWebCrawler = () => {
 
     </div>
     
-      {/* Crawled Data Display */}
-      {crawledData.length > 0 && (
-        <div className="mt-6">
-          <CrawlViewer data={crawledData} />
-        </div>
-      )}
+      {!loading && <CrawlHistory />}
     </>
   );
 };

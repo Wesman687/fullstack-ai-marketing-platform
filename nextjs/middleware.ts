@@ -11,6 +11,9 @@ const isPublicRoute = createRouteMatcher([
 const isSecureRoute = createRouteMatcher([
   "/api/asset-processing-job",
   "/api/asset",
+  "/api/crawl",
+  "/api/crawl/requests",
+  "/api/crawl/result",
 ])
 
 const SERVER_API_KEY = process.env.SERVER_API_KEY;
@@ -30,6 +33,11 @@ export default clerkMiddleware(async (auth, request) => {
   // Await the auth() to get the resolved value
   const user = await auth();
   if (isSecureRoute(request)) {
+    // ✅ Allow access if the user is authenticated through Clerk
+    if (user?.userId) {
+      return NextResponse.next();
+    }
+    // ✅ Otherwise, fall back to checking service worker authorization
     return checkServiceWorkerAuth(request);
   }
   // Check if the user is authenticated for public routes
