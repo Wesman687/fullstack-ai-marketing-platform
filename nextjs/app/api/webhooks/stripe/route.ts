@@ -1,7 +1,10 @@
 import { webhookSecret } from "@/lib/config"
+import { SUBSCRIPTION_CREDIT } from "@/lib/constants"
 import stripe from "@/lib/stripe"
-import { db } from "@/server/db"
+import { db, dbSecondary } from "@/server/db"
+import { usersTable } from "@/server/db/schema/db2schema"
 import { subscriptionsTable } from "@/server/db/schema/schema"
+import { eq } from "drizzle-orm"
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
 
@@ -68,10 +71,13 @@ async function handleNewSubscription(subscription: Stripe.Subscription) {
             userId: userid,
             stripeSubscriptionId: subscription.id,
         };
+        const database2 = await dbSecondary()
+        await database2.drizzle.update(usersTable).set({subscription: true, credits: SUBSCRIPTION_CREDIT}).where(eq(usersTable.id, userid))
 
         const database = await db()
         await database.drizzle.insert(subscriptionsTable).values(subscriptionData)
         database.release()
+        database2.release()
 
     } catch (error) {
         console.error("Error retrieving customer", error)

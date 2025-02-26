@@ -30,22 +30,27 @@ export default function CrawlViewer({ id }: CrawlViewerProps) {
   const [selectedResult, setSelectedResult] = useState<CrawlResult | null>(null);
 
 
+
   useEffect(() => {
     setLoading(true);
+  
     const fetchData = async () => {
       try {
-        const response = await axios.get(`/api/crawl/result/${id}`);
-        const results: CrawlResult[] = response.data.crawlResults;
-
+        const response = await axios.get<{ crawlResults: CrawlResult[] }>(`/api/crawl/result/${id}`);
+        const results = response.data.crawlResults.map((result) => ({
+          ...result,
+          data: typeof result.data === 'string' ? JSON.parse(result.data) : result.data, // Handle both stringified and parsed JSON
+        }));
+  
         if (results.length > 0) {
           const dynamicKeys = new Set<string>();
           results.forEach((result) => {
             Object.keys(result.data).forEach((key) => dynamicKeys.add(key));
           });
-
+  
           setHeaders([...dynamicKeys]);
         }
-
+  
         setCrawlResults(results);
       } catch (error) {
         console.error('❌ Error fetching crawl request:', error);
@@ -53,10 +58,11 @@ export default function CrawlViewer({ id }: CrawlViewerProps) {
         setLoading(false);
       }
     };
-
+  
     fetchData();
   }, [id]);
   const handleView = (result: CrawlResult) => {
+    console.log(result)
     setSelectedResult(result);
     setIsModalOpen(true);
   };
@@ -70,28 +76,29 @@ export default function CrawlViewer({ id }: CrawlViewerProps) {
 
   const handleSaveEdit = async () => {
     if (editingCell) {
+      // ✅ Update local state
       const updatedResults = crawlResults.map((result) => {
         if (result.id === editingCell.id) {
           return {
             ...result,
             data: {
               ...result.data,
-              [editingCell.field]: editedValue,
+              [editingCell.field]: editedValue,  // Update the edited field
             },
           };
         }
         return result;
       });
-
-      setCrawlResults(updatedResults);
-      setEditingCell(null);
-
-      // Send the updated full data object as a string
+  
+      setCrawlResults(updatedResults);  // Update state instantly for UI feedback
+      setEditingCell(null);  // Close the editing mode
+  
+      // ✅ Send updated data to the backend (without JSON.stringify)
       try {
         const updatedData = updatedResults.find((r) => r.id === editingCell.id)?.data;
         if (updatedData) {
           await axios.patch(`/api/crawl/result/${editingCell.id}`, {
-            data: JSON.stringify(updatedData),
+            data: updatedData,  // Send as object directly
           });
         }
       } catch (error) {
@@ -99,53 +106,60 @@ export default function CrawlViewer({ id }: CrawlViewerProps) {
       }
     }
   };
+  
   const handleSaveFromModal = async (updatedData: Record<string, string>) => {
     if (selectedResult) {
+      // ✅ Update local state for instant UI feedback
       const updatedResults = crawlResults.map((result) =>
         result.id === selectedResult.id
           ? { ...result, data: updatedData }
           : result
       );
-
-      setCrawlResults(updatedResults);
-
-      // Send full updated data to the server
+  
+      setCrawlResults(updatedResults);  // Update local state
+  
+      // ✅ Send full updated data to the server
       try {
         await axios.patch(`/api/crawl/result/${selectedResult.id}`, {
-          data: JSON.stringify(updatedData),
+          data: updatedData,  // Send the object directly
         });
       } catch (error) {
         console.error('❌ Error updating from modal:', error);
       }
     }
   };
+  
 
 
   // ✅ Delete an entire column from all records
   const handleDeleteColumn = async (field: string) => {
+    // 1️⃣ Remove the field from local state
     const updatedResults = crawlResults.map((result) => {
       const updatedData = { ...result.data };
-      delete updatedData[field];
-      return { ...result, data: updatedData };
+      delete updatedData[field]; // Remove the specific field from data
+      return {
+        ...result,
+        data: updatedData,
+      };
     });
-
+  
+    // 2️⃣ Update local state for UI
     setCrawlResults(updatedResults);
     setHeaders((prev) => prev.filter((header) => header !== field));
-
-    // Send update requests for all rows
+  
+    // 3️⃣ Send update requests for affected rows
     try {
       await Promise.all(
         updatedResults.map((result) =>
           axios.patch(`/api/crawl/result/${result.id}`, {
-            data: JSON.stringify(result.data),
+            data: result.data, // ✅ Convert to string before sending
           })
         )
       );
     } catch (error) {
-      console.error('❌ Error deleting column:', error);
+      console.error("❌ Error deleting column:", error);
     }
   };
-
   return (
     <>
       {loading ? (

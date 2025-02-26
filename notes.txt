@@ -1,0 +1,14 @@
+{"name": "Quinney Oaks Plantation", 
+"error": false, 
+"rating": "4.8Stars", 
+"reviews": "18", 
+"capacity": "300+ Guests", 
+"location": "Millen, GA", 
+"description": "Quinney Oaks Plantation is an event & wedding venue that makes each occasion feel special."}
+
+'7030b2a4-f731-4076-bc86-b0469a9db5e3', 
+'eac7d0fd-14ac-4794-a44d-09128b643cbd', 
+'user_2sbMdvvRI9zWSj2NvQr07h7WWaQ', 
+'{\"name\": \"Georgian Hall\", \"rating\": \"5\", \"reviews\": \"5 Stars (103) Reviews\", \"capacity\": \"201-250 Guests\", 
+\"location\": \"Athens, GA\", \"description\": \"Georgian Hall is an elegant historic site ideal for wedding ceremonies and receptions.\"}',
+ '2025-02-24 21:47:57'

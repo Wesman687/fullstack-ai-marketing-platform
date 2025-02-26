@@ -2,16 +2,27 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import CrawlViewer from './CrawlViewer';
+import ActionDropdown from './ActionDropDown';
+import toast from 'react-hot-toast';
 
 interface CrawlRequest {
     id: string;
     url: string;
     status: string;
     name: string;
+    tag: string;
     createdAt: string;
+    fields: [{
+        fields: string[];
+    }];
 }
-
-const CrawlHistory = () => {
+interface CrawlHistoryProps {
+    setTag: React.Dispatch<React.SetStateAction<string>>;
+    setUrl: React.Dispatch<React.SetStateAction<string>>;
+    setFields: React.Dispatch<React.SetStateAction<string[]>>;
+    setNameOfCrawl: React.Dispatch<React.SetStateAction<string>>;
+}
+const CrawlHistory = ({setTag, setUrl, setFields, setNameOfCrawl}: CrawlHistoryProps) => {
     const [crawlRequests, setCrawlRequests] = useState<CrawlRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -44,7 +55,26 @@ const CrawlHistory = () => {
 
         return `${headers}\n${rows}`;
     };
-
+    const resendCrawlRequest = async (request: CrawlRequest) => {
+        try {
+          // ✅ Step 1: Update crawl status on the server
+          const response = await axios.post(
+            `${process.env.NEXT_PUBLIC_API}/resend-crawl/${request.id}`
+          );
+          if (response.status === 200){
+            toast.success('Crawl request resent successfully.');
+          }
+        } catch (err) {
+          console.error('❌ Resend Error:', err);
+        }
+      };
+    const reloadData = (request: CrawlRequest) => {
+        console.log(request)
+        setNameOfCrawl(request.name)
+        setUrl(request.url)
+        setTag(request.tag)
+        setFields(request.fields[0].fields)
+    }
 
     // ✅ Delete Crawl Request
     const deleteCrawlRequest = async (id: string) => {
@@ -89,82 +119,66 @@ const CrawlHistory = () => {
 
     useEffect(() => {
         fetchCrawlRequests(); // Initial fetch
-    
+
         const interval = setInterval(() => {
-          fetchCrawlRequests(); // Ping every 1 second
+            fetchCrawlRequests(); // Ping every 1 second
         }, 1000);
-    
+
         return () => clearInterval(interval); // Cleanup on unmount
-      }, []);
+    }, []);
 
     if (loading || error) return <div className='p-24 w-full h-full flex justify-center '>
         <p>🔄 Loading crawl history...</p>
         {error && <p className="text-red-500">{error}</p>}
-        </div>
-        
+    </div>
+
 
     return (
         <>
-        <div className="my-10 border p-4 border-gray-200  bg-white rounded-lg shadow-lg w-full justify-center items-center">
-            <h1 className="text-2xl font-bold mb-4 text-center">📜 Crawl History</h1>
+            <div className="my-10 border p-4 border-gray-200 bg-white rounded-lg shadow-lg w-full justify-center items-center">
+                <h1 className="text-2xl font-bold mb-4 text-center">📜 Crawl History</h1>
 
-            {crawlRequests.length === 0 ? (
-                <p className="text-center">No crawl requests found.</p>
-            ) : (
-                <table className="w-full table-auto border-collapse">
-                    <thead>
-                        <tr className="bg-gray-200 whitespace-nowrap">
-                            <th className="p-2  border ">Name</th>
-                            <th className="p-2 border truncate">URL</th>
-                            <th className="p-2 border">Status</th>
-                            <th className="p-2 border">Created Date</th>
-                            <th className="p-2 border">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {crawlRequests.map((request) => (
-                            <tr key={request.id} className="text-center">
-                                <td className="border p-2 max-w-[100px] truncate overflow-hidden whitespace-nowrap">{request.name}</td>
-                                <td className="border p-2 max-w-[300px] overflow-hidden truncate whitespace-nowrap">{request.url}</td>
-                                <td className="border p-2">{request.status}</td>
-                                <td className="border p-2">{(new Date(request.createdAt).toLocaleString()).slice(0,10)}</td>
-                                <td className="border p-2 flex gap-2 justify-center">
-                                        <button className="bg-blue-600 text-white px-8 py-4rounded" 
-                                        onClick={()=>{
-
-                                            setShowCrawlViewer(true);
-                                            setCrawlId(request.id);
-                                        }}>👁️ Show</button>
-
-                                    {/* ✅ Download Crawl */}
-                                    <button
-                                        className="bg-green-600 text-white p-1 rounded"
-                                        onClick={() => downloadCrawlRequest(request.id, "json")}
-                                    >
-                                        📥 Download
-                                    </button>
-                                    <button
-                                        className="bg-green-600 text-white p-1 rounded"
-                                        onClick={() => downloadCrawlRequest(request.id, "csv")}
-                                    >
-                                        📥 Download CSV
-                                    </button>
-
-                                    {/* ✅ Delete Crawl */}
-                                    <button
-                                        className="bg-red-600 text-white p-1 rounded"
-                                        onClick={() => deleteCrawlRequest(request.id)}
-                                    >
-                                        🗑️ Delete
-                                    </button>
-                                </td>
+                {crawlRequests.length === 0 ? (
+                    <p className="text-center">No crawl requests found.</p>
+                ) : (
+                    <table className="w-full table-auto border-collapse">
+                        <thead>
+                            <tr className="bg-gray-200 whitespace-nowrap">
+                                <th className="p-2 border">Name</th>
+                                <th className="p-2 border truncate">URL</th>
+                                <th className="p-2 border">Status</th>
+                                <th className="p-2 border">Created Date</th>
+                                <th className="p-2 border">Actions</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            )}
-        </div>
-        {showCrawlViewer && <CrawlViewer id={crawlId} />}
+                        </thead>
+                        <tbody>
+                            {crawlRequests.map((request) => (
+                                <tr key={request.id} className="text-center">
+                                    <td className="border p-2 max-w-[100px] truncate overflow-hidden whitespace-nowrap">{request.name}</td>
+                                    <td className="border p-2 max-w-[300px] overflow-hidden truncate whitespace-nowrap">{request.url}</td>
+                                    <td className="border p-2">{request.status}</td>
+                                    <td className="border p-2">{new Date(request.createdAt).toLocaleDateString()}</td>
+                                    <td className="border p-2 flex justify-center">
+                                        <ActionDropdown
+                                            onView={() => {
+                                                setShowCrawlViewer(true);
+                                                setCrawlId(request.id);
+                                            }}
+                                            onDownloadJSON={() => downloadCrawlRequest(request.id, 'json')}
+                                            onDownloadCSV={() => downloadCrawlRequest(request.id, 'csv')}
+                                            onResend={() => resendCrawlRequest(request)}
+                                            onDelete={() => deleteCrawlRequest(request.id)}
+                                            onReload={() => reloadData(request)}
+                                        />
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+
+            {showCrawlViewer && <CrawlViewer id={crawlId} />}
         </>
     );
 };

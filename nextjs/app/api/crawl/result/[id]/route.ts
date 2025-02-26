@@ -6,8 +6,8 @@ import {  eq } from "drizzle-orm"
 import { z } from "zod";
 
 const updateCrawlResultSchema = z.object({
-    data: z.string()
-})
+    data: z.record(z.string(), (z.any())), // Accepts any JSON object
+});
 
 
 
@@ -59,18 +59,19 @@ export async function DELETE(request: NextRequest) {
         database.release();
     }
 }
+export async function PATCH(request: NextRequest) {
+    const { userId } = getAuth(request);
+    const body = await request.json(); // Use `json()` instead of `text()`
 
-export async function PATCH(request: NextRequest){
-    const {userId} = getAuth(request);
-    const body = await request.text();
-    if (!userId) { return NextResponse.json({ error: "Unauthorized" }, { status: 401 }) }
-    
+    if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const url = new URL(request.url);
     const pathSegments = url.pathname.split("/");
-    const id = pathSegments[4]; 
+    const id = pathSegments[4];
 
-    const jsonBody = JSON.parse(body)
-    const validationResult = updateCrawlResultSchema.safeParse(jsonBody);
+    const validationResult = updateCrawlResultSchema.safeParse(body);
     if (!validationResult.success) {
         console.error("❌ Validation failed:", validationResult.error.message);
         return NextResponse.json({ error: validationResult.error.message }, { status: 400 });
@@ -82,16 +83,15 @@ export async function PATCH(request: NextRequest){
 
     try {
         await database.drizzle
-      .update(crawlResultsTable)
-      .set({data: data})
-      .where(eq(crawlResultsTable.id, id)).execute()
+            .update(crawlResultsTable)
+            .set({ data }) // Store as JSON object
+            .where(eq(crawlResultsTable.id, id))
+            .execute();
 
-    return NextResponse.json({ message: 'Crawl request updated' }, { status: 200 });
-        
+        return NextResponse.json({ message: "Crawl request updated" }, { status: 200 });
     } catch (error) {
         console.error("❌ Error updating crawl request:", error);
         return NextResponse.json({ error: "Failed to update crawl request" }, { status: 500 });
-        
     } finally {
         database.release();
     }

@@ -6,7 +6,8 @@ const isPublicRoute = createRouteMatcher([
   "/pricing",
   "/api/upload",
   "/api/user",
-  "/api/webhooks/stripe"
+  "/api/webhooks/stripe",
+  "/api/webhooks/clerk",
 ])
 const isSecureRoute = createRouteMatcher([
   "/api/asset-processing-job",
@@ -14,6 +15,7 @@ const isSecureRoute = createRouteMatcher([
   "/api/crawl",
   "/api/crawl/requests",
   "/api/crawl/result",
+  "/api/detect-pagination",
 ])
 
 const SERVER_API_KEY = process.env.SERVER_API_KEY;
@@ -22,7 +24,7 @@ if (!SERVER_API_KEY) {
 }
 
 export default clerkMiddleware(async (auth, request) => {
-  if (request.nextUrl.pathname === "/api/webhooks/stripe") {
+  if (request.nextUrl.pathname === "/api/webhooks/stripe" || request.nextUrl.pathname === "/api/webhooks/clerk") {
     // Skip authentication for Stripe webhooks
     return NextResponse.next();
   }
