@@ -17,7 +17,7 @@ const SmartWebCrawler = () => {
   const [userId, setUserId] = useState('');
   const [loading, setLoading] = useState(true);
   const [customSelector, setCustomSelector] = useState('');
-  const [paginationMethod, setPaginationMethod] = useState("");
+  const [paginationMethod, setPaginationMethod] = useState('');
 
   // ✅ Add Field
   const addField = () => {
@@ -40,6 +40,8 @@ const SmartWebCrawler = () => {
     setNewField('');
     setIsCrawling(false);
   };
+
+  // ✅ Bulk Add Fields
   const addBulkFields = () => {
     const parsedFields = bulkInput
       .split(/[\n,]+/) // Split by newline or comma
@@ -81,7 +83,7 @@ const SmartWebCrawler = () => {
         { timeout: 300000 } // ⏳ Set timeout to 5 minutes for crawling
       );
 
-      toast.success('Crawling, Data will be ready shortly.')
+      toast.success('Crawling, Data will be ready shortly.');
     } catch (error) {
       console.error('❌ Error:', error);
       toast.error('Failed to crawl data. Please try again.');
@@ -94,6 +96,7 @@ const SmartWebCrawler = () => {
       setIsCrawling(false);
     }
   };
+
   useEffect(() => {
     setLoading(true);
     const fetchData = async () => {
@@ -101,23 +104,22 @@ const SmartWebCrawler = () => {
         const { data } = await axios.get('/api/user');
         setUserId(data.userId);
       } catch (error) {
-        console.error("Error fetching user ID:", error);
-      }
-      finally {
+        console.error('Error fetching user ID:', error);
+      } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [])
+  }, []);
 
   return (
     <>
-      <div className="max-w-lg mx-auto p-6 bg-white rounded-lg shadow-lg">
+      <div className="w-full max-w-3xl mx-auto p-6 bg-white rounded-lg shadow-lg sm:w-full">
         <h1 className="text-2xl font-bold mb-4 text-center">🌐 Smart Web Crawler</h1>
 
-      <PaginationSettings paginationMethod={paginationMethod} setPaginationMethod={setPaginationMethod} url={url} setUrl={setUrl} />
+        <PaginationSettings paginationMethod={paginationMethod} setPaginationMethod={setPaginationMethod} url={url} setUrl={setUrl} />
 
-        {/* Tag Input */}
+        {/* Crawl Title Input */}
         <input
           type="text"
           placeholder="Enter the title of the Crawl"
@@ -125,13 +127,12 @@ const SmartWebCrawler = () => {
           onChange={(e) => setNameOfCrawl(e.target.value)}
           className="border rounded p-2 w-full mb-4"
         />
-        <label className="block text-sm font-medium text-gray-700">
-          Custom CSS Selector (optional):
-        </label>
+
+        {/* Custom Selector Input */}
         <input
           type="text"
           className="border rounded p-2 w-full mb-4"
-          placeholder="e.g., .listing-card, .product-item"
+          placeholder="Custom CSS Selector (optional)"
           value={customSelector}
           onChange={(e) => setCustomSelector(e.target.value)}
         />
@@ -146,7 +147,7 @@ const SmartWebCrawler = () => {
         />
 
         {/* Add Fields */}
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex flex-col sm:flex-row items-center gap-2 mb-4">
           <input
             type="text"
             placeholder="Add field (e.g., name)"
@@ -154,16 +155,10 @@ const SmartWebCrawler = () => {
             onChange={(e) => setNewField(e.target.value)}
             className="border rounded p-2 flex-grow"
           />
-          <button
-            onClick={addField}
-            className="bg-green-600 text-white p-2 rounded"
-          >
+          <button onClick={addField} className="bg-green-600 text-white px-4 py-2 rounded">
             ➕
           </button>
-          <button
-            onClick={() => setIsBulkInputOpen(!isBulkInputOpen)}
-            className="bg-blue-500 text-white p-2 rounded"
-          >
+          <button onClick={() => setIsBulkInputOpen(!isBulkInputOpen)} className="bg-blue-500 text-white px-4 py-2 rounded">
             📋 Bulk Add
           </button>
         </div>
@@ -177,28 +172,21 @@ const SmartWebCrawler = () => {
               onChange={(e) => setBulkInput(e.target.value)}
               className="border rounded p-2 w-full h-24"
             />
-            <button
-              onClick={addBulkFields}
-              className="mt-2 bg-blue-600 text-white p-2 rounded w-full"
-            >
+            <button onClick={addBulkFields} className="mt-2 bg-blue-600 text-white p-2 rounded w-full">
               Add Fields from List ➡️
             </button>
           </div>
         )}
 
-
         {/* Display Fields */}
         {fields.length > 0 && (
-          <div className="mt-4 p-3 bg-gray-100 rounded-lg shadow">
+          <div className="mt-4 p-3 bg-gray-100 rounded-lg shadow max-h-48 overflow-y-auto">
             <h2 className="text-lg font-medium mb-2">📋 Selected Fields:</h2>
             <ul className="list-disc pl-5">
               {fields.map((field, index) => (
                 <li key={index} className="flex justify-between items-center mb-1">
                   <span>{field}</span>
-                  <button
-                    onClick={() => removeField(index)}
-                    className="text-red-500 hover:text-red-700"
-                  >
+                  <button onClick={() => removeField(index)} className="text-red-500 hover:text-red-700">
                     ❌
                   </button>
                 </li>
@@ -208,24 +196,14 @@ const SmartWebCrawler = () => {
         )}
 
         {/* Action Buttons */}
-        <div className="flex gap-2 mt-4">
-          <button
-            onClick={crawlData}
-            disabled={isCrawling}
-            className={`flex-1 p-2 rounded ${isCrawling ? 'bg-gray-400' : 'bg-blue-600 text-white'
-              }`}
-          >
+        <div className="flex flex-col sm:flex-row gap-2 mt-4">
+          <button onClick={crawlData} disabled={isCrawling} className="flex-1 p-2 bg-blue-600 text-white rounded">
             {isCrawling ? 'Crawling... 🔄' : 'Start Crawling 🚀'}
           </button>
-          <button
-            onClick={clearForm}
-            disabled={isCrawling}
-            className="flex-1 bg-red-500 text-white p-2 rounded"
-          >
+          <button onClick={clearForm} disabled={isCrawling} className="flex-1 bg-red-500 text-white p-2 rounded">
             Clear ❌
           </button>
         </div>
-
       </div>
 
       {!loading && <CrawlHistory setUrl={setUrl} setNameOfCrawl={setNameOfCrawl} setTag={setTag} setFields={setFields} />}

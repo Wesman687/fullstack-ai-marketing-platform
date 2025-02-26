@@ -20,7 +20,7 @@ const ActionDropdown = ({ onView, onDownloadJSON, onDownloadCSV, onResend, onDel
         <MoreVertical size={18} />
       </DropdownMenu.Trigger>
 
-      <DropdownMenu.Content className="rounded-lg shadow-lg bg-white p-2 cursor-pointer">
+      <DropdownMenu.Content className="rounded-lg shadow-lg bg-white p-2 cursor-pointer z-20">
         <DropdownMenu.Item className="px-3 py-1 hover:bg-gray-100 rounded" onSelect={onView}>
           👁️ View
         </DropdownMenu.Item>
