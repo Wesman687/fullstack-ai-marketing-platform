@@ -5,6 +5,7 @@ import axios from 'axios';
 import CrawlViewer from './CrawlViewer';
 import ActionDropdown from './ActionDropDown';
 import toast from 'react-hot-toast';
+import { handleDownloadHTML, handleDownloadPDF, handleExportAndDownloadExcel, handleExportToGoogleSheets, updateGoogleSheetId } from './utils/crawlExport';
 
 interface CrawlRequest {
   id: string;
@@ -14,6 +15,7 @@ interface CrawlRequest {
   tag: string;
   createdAt: string;
   fields: [{ fields: string[] }];
+  google_sheet_id: string;
 }
 interface CrawlResult {
     id: string;
@@ -27,10 +29,10 @@ interface CrawlHistoryProps {
   setTag: React.Dispatch<React.SetStateAction<string>>;
   setUrl: React.Dispatch<React.SetStateAction<string>>;
   setFields: React.Dispatch<React.SetStateAction<string[]>>;
-  setNameOfCrawl: React.Dispatch<React.SetStateAction<string>>;
+  setName: React.Dispatch<React.SetStateAction<string>>;
 }
 
-const CrawlHistory = ({ setTag, setUrl, setFields, setNameOfCrawl }: CrawlHistoryProps) => {
+const CrawlHistory = ({ setTag, setUrl, setFields, setName }: CrawlHistoryProps) => {
   const [crawlRequests, setCrawlRequests] = useState<CrawlRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -64,7 +66,7 @@ const CrawlHistory = ({ setTag, setUrl, setFields, setNameOfCrawl }: CrawlHistor
   };
 
   const reloadData = (request: CrawlRequest) => {
-    setNameOfCrawl(request.name);
+    setName(request.name);
     setUrl(request.url);
     setTag(request.tag);
     setFields(request.fields[0].fields);
@@ -199,9 +201,14 @@ const CrawlHistory = ({ setTag, setUrl, setFields, setNameOfCrawl }: CrawlHistor
                         }}
                         onDownloadJSON={() => downloadCrawlRequest(request.id, 'json')}
                         onDownloadCSV={() => downloadCrawlRequest(request.id, 'csv')}
+                        onDownloadExcel={() => handleExportAndDownloadExcel(request.id)}
+                        onDownloadPDF={() => handleDownloadPDF(request.id)}
                         onResend={() => resendCrawlRequest(request)}
                         onDelete={() => deleteCrawlRequest(request.id)}
                         onReload={() => reloadData(request)}
+                        onDownloadHTML={() => handleDownloadHTML(request.id)}
+                        onExportGoogleSheets={() => handleExportToGoogleSheets(request.id)}
+                        onUpdateSheets={() => updateGoogleSheetId(request.id)}
                       />
                     </td>
                   </tr>

@@ -32,7 +32,6 @@ export async function POST(req: Request) {
   // Get body
   const payload = await req.json()
   const body = JSON.stringify(payload)
-
   let evt: WebhookEvent
 
   // Verify payload with headers
@@ -61,7 +60,7 @@ export async function POST(req: Request) {
       const id = crypto.randomUUID();
       const result = await database.drizzle.insert(usersTable).values({
         id: id,
-        email: payload.email,
+        email: payload?.data?.email_addresses[0]?.email_address,
         createdAt: new Date(),
         credits: FREE_CREDIT,
         subscription: false,

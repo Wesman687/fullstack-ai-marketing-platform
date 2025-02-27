@@ -16,6 +16,7 @@ const isSecureRoute = createRouteMatcher([
   "/api/crawl/requests",
   "/api/crawl/result",
   "/api/detect-pagination",
+  "/api/scrape/save"
 ])
 
 const SERVER_API_KEY = process.env.SERVER_API_KEY;

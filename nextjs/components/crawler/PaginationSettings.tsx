@@ -1,9 +1,9 @@
+import { validateUrl } from "@/app/utils/validateUrl";
 import axios from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface PaginationSettingsProps {
   url: string;
-  setUrl: (url: string) => void;
   setPaginationMethod: (method: string) => void;
     paginationMethod: string;
 }
@@ -16,14 +16,21 @@ export const PaginationMethods = {
 };
 
 export default function PaginationSettings({
-   url, setUrl, setPaginationMethod, paginationMethod
+   url, setPaginationMethod, paginationMethod
 }: PaginationSettingsProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [detectedPagination, setDetectedPagination] = useState<string>("");
+  const [testUrl, setTestUrl] = useState<string>(url || "");
+  const [debouncedUrl, setDebouncedUrl] = useState<string>(url || "");
 
   // Function to detect pagination method dynamically
   const detectPaginationMethod = async (url: string) => {
+    if (!validateUrl(url)) {
+      setError("❌ Invalid URL. Please enter a valid URL.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     try {
@@ -42,7 +49,31 @@ export default function PaginationSettings({
   const handleAutoDetect = () => {
     if (url) detectPaginationMethod(url);
   };
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (testUrl && validateUrl(testUrl)) {
+        setDebouncedUrl(testUrl);
+      }
+    }, 5000); // ⏳ 500ms delay before setting debouncedUrl
 
+    return () => clearTimeout(handler);
+  }, [testUrl]);
+  
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (url && validateUrl(url)) {
+        setDebouncedUrl(url);
+      }
+    }, 5000); // ⏳ 500ms delay before setting debouncedUrl
+
+    return () => clearTimeout(handler);
+  }, [url]);
+  
+
+  // ✅ Auto-detect pagination when debounced URL changes
+  useEffect(() => {
+    if (debouncedUrl) detectPaginationMethod(debouncedUrl);
+  }, [debouncedUrl]);
 
   return (
     <div className="p-4 border rounded mb-4">
@@ -51,8 +82,8 @@ export default function PaginationSettings({
       <input
         type="text"
         placeholder="Enter URL to detect pagination"
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
+        value={testUrl}
+        onChange={(e) => setTestUrl(e.target.value)}
         className="border p-2 w-full rounded mb-4"
       />
 
