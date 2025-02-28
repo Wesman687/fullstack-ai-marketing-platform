@@ -2,15 +2,20 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import PaginationSettings from './PaginationSettings';
+import PaginationSettings, { PaginationMethods } from './PaginationSettings';
 import CrawlHistory from './CrawlHistory';
 import BulkUrl from './scraperInput/BulkUrl';
 import ScraperFields from './scraperInput/ScraperFields';
-import { validateUrl } from '@/app/utils/validateUrl';
 import ScraperUrlInput from './scraperInput/ScraperUrlInput';
 
 interface ScraperFormProps {
     mode: 'crawl' | 'scrape';
+}
+export interface PaginationInterface {
+    [key: string]: {
+        name: string;
+        desc: string;
+    }
 }
 
 export default function ScraperForm({ mode }: ScraperFormProps) {
@@ -25,9 +30,11 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
     const [tag, setTag] = useState('');
     const [fields, setFields] = useState<string[]>([]);
     const [sheetId, setSheetId] = useState('');
-    const [paginationMethod, setPaginationMethod] = useState('');
+    const [paginationMethod, setPaginationMethod] = useState<keyof PaginationInterface>('URL_PAGINATION');
     const [newUrl, setNewUrl] = useState('');
     const [url, setUrl] = useState('');
+        const [typing, setTyping] = useState(false);
+        const [tempUrl, setTempUrl] = useState(''); // Temporary URL while typing
 
     // ✅ Fetch User ID
     useEffect(() => {
@@ -49,25 +56,29 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
 
     // ✅ Start Crawling/Scraping
     const startProcessing = async () => {
-        if (urls.some((url) => !url)) {
-            toast.error('❌ Please enter a URL and at least one selector.');
-            return;
-        }
+        if (mode === "crawl") startCrawl();
+        else startScrape();
+
         setIsProcessing(true);
+        
+    };
+    const startScrape = async () => {
+    }
+    const startCrawl = async () => {
         try {
             const payload = {
                 userId,
                 name,
                 tag,
                 fields,
-                urls,
-                selector,
-                paginationMethod,
+                url,            
+                paginationMethod: PaginationMethods[paginationMethod].name
+,
                 sheetId,
                 customSelector,
             };
 
-            await axios.post(`${process.env.NEXT_PUBLIC_API}/${mode}/start`, payload);
+            await axios.post(`${process.env.NEXT_PUBLIC_API}/crawl/test`, payload);
             toast.success(`${mode === 'crawl' ? 'Crawling' : 'Scraping'} started! Data will be available soon.`);
         } catch (error) {
             console.error(`❌ ${mode} failed:`, error);
@@ -75,7 +86,7 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
         } finally {
             setIsProcessing(false);
         }
-    };
+    }
 
     // ✅ Clear Data
     const clearData = () => {
@@ -89,14 +100,17 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
         setTag('');
         setUrl('');
     };
-
+    const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setTempUrl(e.target.value);
+        setTyping(true);
+    };
     // ✅ Bulk Add URLs
     return (
         <>
             <div className="p-4 max-w-3xl mx-auto bg-white rounded-lg shadow-md">
                 <PaginationSettings paginationMethod={paginationMethod} setPaginationMethod={setPaginationMethod} url={url} />
                 <h1 className="text-xl font-bold">{isScraper ? '🖥️ Browser Scraper' : '🌐 Smart Web Crawler'}</h1>
-                <ScraperUrlInput url={url} setUrl={setUrl} />
+                <ScraperUrlInput url={url} setUrl={setUrl} typing={typing} setTyping={setTyping} tempUrl={tempUrl} setTempUrl={setTempUrl} handleUrlChange={handleUrlChange} />
                 {mode === "scrape" && ( <BulkUrl newUrl={newUrl} setNewUrl={setNewUrl} urls={urls} setUrls={setUrls} />)}
                 <input
                     type="text"
@@ -126,16 +140,15 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
                 <div className="flex items-center mt-3 mb-4">
                     <input
                         type="text"
-                        placeholder="CSS Selector (e.g., .title)"
-                        value={selector}
-                        onChange={(e) => setSelector(e.target.value)}
+                        placeholder="Item You are Selecting ..(eg: Venue, Shoes, Book)"
+                        value={tag}
+                        onChange={(e) => setTag(e.target.value)}
                         className="border rounded p-2 flex-grow"
                     />
                 </div>
 
                 <ScraperFields fields={fields} setFields={setFields} />
-                {/* 🚀 Start & Clear Buttons (Side by Side) */}
-                {/* 🚀 Start & Clear Buttons (Side by Side) */}
+
                 <div className="flex justify-center gap-6 mt-4">
                     <button
                         onClick={startProcessing}
@@ -154,7 +167,8 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
                 </div>
 
             </div>
-            {!loading && <CrawlHistory setUrl={setUrl} setName={setName} setTag={setTag} setFields={setFields} />}
+            {!loading && <CrawlHistory handleUrlChange={handleUrlChange} setName={setName} setTag={setTag} setFields={setFields} 
+            setSheetId={setSheetId} setCustomSelector={setCustomSelector}  />}
         </>
     );
 }

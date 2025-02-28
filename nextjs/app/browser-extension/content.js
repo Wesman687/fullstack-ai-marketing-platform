@@ -1,3 +1,4 @@
+
 let selectedFields = [];
 let isSelecting = false;
 

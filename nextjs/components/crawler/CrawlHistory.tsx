@@ -14,8 +14,9 @@ interface CrawlRequest {
   name: string;
   tag: string;
   createdAt: string;
-  fields: [{ fields: string[] }];
+  fields:  string[] ;
   google_sheet_id: string;
+  selector: string;
 }
 interface CrawlResult {
     id: string;
@@ -27,12 +28,14 @@ interface CrawlResult {
 
 interface CrawlHistoryProps {
   setTag: React.Dispatch<React.SetStateAction<string>>;
-  setUrl: React.Dispatch<React.SetStateAction<string>>;
   setFields: React.Dispatch<React.SetStateAction<string[]>>;
   setName: React.Dispatch<React.SetStateAction<string>>;
+  handleUrlChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  setCustomSelector: React.Dispatch<React.SetStateAction<string>>;
+  setSheetId: React.Dispatch<React.SetStateAction<string>>;
 }
 
-const CrawlHistory = ({ setTag, setUrl, setFields, setName }: CrawlHistoryProps) => {
+const CrawlHistory = ({ setTag,  setFields, setName, handleUrlChange, setCustomSelector, setSheetId }: CrawlHistoryProps) => {
   const [crawlRequests, setCrawlRequests] = useState<CrawlRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -56,7 +59,7 @@ const CrawlHistory = ({ setTag, setUrl, setFields, setName }: CrawlHistoryProps)
 
   const resendCrawlRequest = async (request: CrawlRequest) => {
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API}/resend-crawl/${request.id}`);
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API}/crawl/resend/${request.id}`);
       if (response.status === 200) {
         toast.success('Crawl request resent successfully.');
       }
@@ -67,9 +70,12 @@ const CrawlHistory = ({ setTag, setUrl, setFields, setName }: CrawlHistoryProps)
 
   const reloadData = (request: CrawlRequest) => {
     setName(request.name);
-    setUrl(request.url);
+    handleUrlChange({ target: { value: request.url } } as React.ChangeEvent<HTMLInputElement>);
     setTag(request.tag);
-    setFields(request.fields[0].fields);
+    setFields(request.fields);
+    setSheetId(request.google_sheet_id);
+    setCustomSelector(request.custom_selector)
+    console.log(request)
   };
 
   // ✅ Delete Crawl Request
@@ -155,10 +161,10 @@ const CrawlHistory = ({ setTag, setUrl, setFields, setName }: CrawlHistoryProps)
 
   useEffect(() => {
     fetchCrawlRequests();
-    const interval = setInterval(fetchCrawlRequests, 1000);
+    const interval = setInterval(fetchCrawlRequests, 5000); // ⏳ Poll every 5 seconds instead of 1 second
     return () => clearInterval(interval);
   }, []);
-
+  
   if (loading || error)
     return (
       <div className="p-24 w-full h-full flex justify-center">

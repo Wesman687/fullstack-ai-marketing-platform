@@ -4,13 +4,16 @@ import React, { useEffect, useState } from 'react'
 interface ScraperUrlInputProps {
     url: string;
     setUrl: React.Dispatch<React.SetStateAction<string>>;
+    tempUrl: string;
+    setTempUrl: React.Dispatch<React.SetStateAction<string>>;
+    typing: boolean;
+    setTyping: React.Dispatch<React.SetStateAction<boolean>>;
+    handleUrlChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-function ScraperUrlInput({ url, setUrl }: ScraperUrlInputProps) {
+function ScraperUrlInput({ url, setUrl, tempUrl, setTempUrl, typing, setTyping, handleUrlChange }: ScraperUrlInputProps) {
 
-    const [tempUrl, setTempUrl] = useState(''); // Temporary URL while typing
     const [urlError, setUrlError] = useState('');
-    const [typing, setTyping] = useState(false);
     useEffect(() => {
         if (!typing) return;
 
@@ -28,10 +31,7 @@ function ScraperUrlInput({ url, setUrl }: ScraperUrlInputProps) {
     }, [tempUrl, typing]);
 
     // ✅ Handle Input Change
-    const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setTempUrl(e.target.value);
-        setTyping(true);
-    };
+    
     return (
         <>
             <h3 className="font-semibold mt-4">Primary URL</h3>
