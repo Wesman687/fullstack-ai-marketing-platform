@@ -107,7 +107,6 @@ export default function PaginationSettings({
   return (
     <div className="p-4 border rounded mb-4">
       <h2 className="text-xl font-bold mb-2">Pagination Settings</h2>
-
       <p className="mt-2">
         Detected Method: <strong>{paginationMethod}</strong>
       </p>

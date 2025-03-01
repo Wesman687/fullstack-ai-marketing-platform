@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
         const crawlRequests = await database.drizzle
       .select()
       .from(crawlRequestsTable)
-      .where(eq(crawlRequestsTable.userId, userId)).orderBy(desc(crawlRequestsTable.createdAt))
+      .where(eq(crawlRequestsTable.userId, userId))
+      .orderBy(desc(crawlRequestsTable.updatedAt), desc(crawlRequestsTable.createdAt));
 
 
     return NextResponse.json({ crawlRequests }, { status: 200 });

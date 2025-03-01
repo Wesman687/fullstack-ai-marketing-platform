@@ -16,6 +16,11 @@ export const crawlRequestsTable = mysqlTable("crawl_requests", {
     createdAt: timestamp("created_at")
         .default(sql`CURRENT_TIMESTAMP`)
         .notNull(),
+    updatedAt: timestamp("updated_at")
+        .default(sql`CURRENT_TIMESTAMP`)
+        .notNull(),
+    custom_selector: varchar("custom_selector", { length: 255 }),
+    paginationMethod: varchar("pagination_method", { length: 255 }),
     completedAt: timestamp("completed_at"),
     name: varchar("name", { length: 255 }).notNull(),
     errorMessage: varchar("error_message", { length: 255 }),

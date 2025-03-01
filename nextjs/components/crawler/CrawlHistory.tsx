@@ -16,7 +16,7 @@ interface CrawlRequest {
   createdAt: string;
   fields:  string[] ;
   google_sheet_id: string;
-  selector: string;
+  custom_selector: string;
 }
 interface CrawlResult {
     id: string;
@@ -54,7 +54,6 @@ const CrawlHistory = ({ setTag,  setFields, setName, handleUrlChange, setCustomS
       setLoading(false);
     }
   };
-
 
 
   const resendCrawlRequest = async (request: CrawlRequest) => {
@@ -175,7 +174,7 @@ const CrawlHistory = ({ setTag,  setFields, setName, handleUrlChange, setCustomS
 
   return (
     <>
-      <div className="my-10 border p-4 border-gray-200 bg-white rounded-lg shadow-lg w-full">
+      <div className="my-10 max-h-[40vh] overflow-scroll overflow-x-hidden border p-4 border-gray-200 bg-white rounded-lg shadow-lg w-full">
         <h1 className="text-2xl font-bold mb-4 text-center">📜 Crawl History</h1>
 
         {crawlRequests.length === 0 ? (
