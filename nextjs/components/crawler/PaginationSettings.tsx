@@ -1,13 +1,9 @@
 import { validateUrl } from "@/app/utils/validateUrl";
 import axios from "axios";
-import { useEffect, useState } from "react";
-import { PaginationInterface } from "./ScraperForm";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { CrawlConfigInterface, PaginationInterface } from "./ScraperForm";
+import { set } from "zod";
 
-interface PaginationSettingsProps {
-  url: string;
-  setPaginationMethod: (method: keyof PaginationInterface) => void;
-  paginationMethod: keyof PaginationInterface;
-}
 
 export const PaginationMethods: PaginationInterface = {
   URL_PAGINATION: {
@@ -27,12 +23,20 @@ export const PaginationMethods: PaginationInterface = {
     name: "NO_PAGINATION",
   },
 };
+interface PaginationSettingsProps {
+  crawlConfig: CrawlConfigInterface;
+  setCrawlConfig: React.Dispatch<React.SetStateAction<CrawlConfigInterface>>;
+}
 
 export default function PaginationSettings({
-  url, setPaginationMethod, paginationMethod
+  crawlConfig, setCrawlConfig,
 }: PaginationSettingsProps) {
   const [error, setError] = useState<string>("");
-  const [debouncedUrl, setDebouncedUrl] = useState<string>(url || "");
+  const [debouncedUrl, setDebouncedUrl] = useState<string>(crawlConfig.url || "");
+
+  const updateCrawlConfig = useCallback((key: keyof CrawlConfigInterface, value: any) => {
+    setCrawlConfig((prev) => ({ ...prev, [key]: value }));
+  }, [setCrawlConfig]);
 
   // Function to detect pagination method dynamically
   const detectPaginationMethod = async (url: string) => {
@@ -61,14 +65,14 @@ export default function PaginationSettings({
               (key) => PaginationMethods[key as keyof PaginationInterface].name === response.data.paginationMethod
             ) as keyof PaginationInterface || "NO_PAGINATION"; // Default to NO_PAGINATION if not found
 
-            setPaginationMethod(detectedMethod)
+            updateCrawlConfig("paginationMethod", detectedMethod);
             return; // ✅ Stop polling
           }
 
 
         } catch (error) {
           console.log(`🔄 File not ready, retrying (${attempts + 1}/${maxAttempts})...`, error);
-          setPaginationMethod("NO_PAGINATION");
+          updateCrawlConfig("paginationMethod", "NO_PAGINATION");
           setError("Failed to detect pagination method.");
         }
 
@@ -79,7 +83,7 @@ export default function PaginationSettings({
 
       // ❌ If all attempts fail, set it to "NO_PAGINATION"
       console.log("❌ Pagination method not detected.");
-      setPaginationMethod("NO_PAGINATION");
+      updateCrawlConfig("paginationMethod", "NO_PAGINATION");
       setError("Failed to detect pagination method.");
 
     } catch (err) {
@@ -90,34 +94,57 @@ export default function PaginationSettings({
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      if (url && validateUrl(url)) {
-        setDebouncedUrl(url);
+      if (crawlConfig.url && validateUrl(crawlConfig.url)) {
+        setDebouncedUrl(crawlConfig.url);
       }
     }, 5000); // ⏳ 500ms delay before setting debouncedUrl
 
     return () => clearTimeout(handler);
-  }, [url]);
+  }, [crawlConfig.url]);
 
   useEffect(() => {
     if (debouncedUrl) {
       detectPaginationMethod(debouncedUrl);
     }
   }, [debouncedUrl]);
+  const paginationName = useMemo(() => PaginationMethods[crawlConfig.paginationMethod]?.name, [crawlConfig.paginationMethod]);
+
 
   return (
     <div className="p-4 border rounded mb-4">
+      <div className="flex justify-between">
+        <div>          
       <h2 className="text-xl font-bold mb-2">Pagination Settings</h2>
       <p className="mt-2">
-        Detected Method: <strong>{paginationMethod}</strong>
+        Detected Method: <strong>{paginationName}</strong>
       </p>
+        </div>
+        <div className="flex items-center justify-center gap-5">
 
+        {crawlConfig.paginationMethod == "INFINITE_SCROLL" ? <label>Max Scrolls: </label> : <label>Max Pages: </label>}
+        <input
+          type="text"
+          placeholder="Enter Max Pages to Scrape (default: 5)"
+          value={crawlConfig.pages}
+          onChange={(e) =>
+            updateCrawlConfig("pages", e.target.value ?? 5)
+          }
+          className="border rounded p-2 w-10 text-center"
+          />
+          </div>
+      </div>
       {error && <p className="text-red-500 mt-2">{error}</p>}
 
       <div className="mt-4">
         <h3 className="font-semibold">Manual Pagination Setup</h3>
         <select
-          value={paginationMethod}
-          onChange={(e) => setPaginationMethod(e.target.value as keyof PaginationInterface)}
+          value={crawlConfig.paginationMethod}
+          onChange={(e) =>
+            setCrawlConfig((prev) => ({
+              ...prev,
+              paginationMethod: e.target.value as keyof PaginationInterface, // ✅ Type assertion
+            }))
+          }
           className="border p-2 w-full rounded mb-2"
         >
           <option value="">Select Pagination Method</option>

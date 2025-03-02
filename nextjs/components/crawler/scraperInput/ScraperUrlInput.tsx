@@ -1,17 +1,15 @@
 import { validateUrl } from '@/app/utils/validateUrl';
-import test from 'node:test';
 import React, { useEffect, useState } from 'react'
+import { CrawlConfigInterface } from '../ScraperForm';
 interface ScraperUrlInputProps {
-    url: string;
-    setUrl: React.Dispatch<React.SetStateAction<string>>;
+    setUrl: React.Dispatch<React.SetStateAction<CrawlConfigInterface['url']>>;
     tempUrl: string;
-    setTempUrl: React.Dispatch<React.SetStateAction<string>>;
     typing: boolean;
     setTyping: React.Dispatch<React.SetStateAction<boolean>>;
     handleUrlChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-function ScraperUrlInput({ url, setUrl, tempUrl, setTempUrl, typing, setTyping, handleUrlChange }: ScraperUrlInputProps) {
+function ScraperUrlInput({  setUrl, tempUrl,  typing, setTyping, handleUrlChange }: ScraperUrlInputProps) {
 
     const [urlError, setUrlError] = useState('');
     useEffect(() => {

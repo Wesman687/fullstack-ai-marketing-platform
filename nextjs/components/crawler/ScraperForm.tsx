@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import PaginationSettings, { PaginationMethods } from './PaginationSettings';
@@ -17,24 +17,37 @@ export interface PaginationInterface {
         desc: string;
     }
 }
+export interface CrawlConfigInterface {
+    urls: string[];
+    name: string;
+    customSelector: string;
+    tag: string;
+    fields: string[];
+    sheetId: string;
+    paginationMethod: keyof PaginationInterface;
+    url: string;
+    pages: number;
+    userId: string;
+}
 
 export default function ScraperForm({ mode }: ScraperFormProps) {
     const isScraper = mode === 'scrape';
-    const [urls, setUrls] = useState<string[]>(['']); // Multiple URLs for Scrape, Single for Crawl
-    const [selector, setSelector] = useState<string>("");
-    const [name, setName] = useState('');
-    const [userId, setUserId] = useState('');
+    const [crawlConfig, setCrawlConfig] = useState({
+        urls: [''], // Multiple URLs for Scrape, Single for Crawl
+        name: '',
+        customSelector: '',
+        tag: '',
+        fields: [] as string[],
+        sheetId: '',
+        paginationMethod: 'NO_PAGINATION' as keyof PaginationInterface,
+        url: '',
+        pages: 5,
+        userId: '',
+    } as CrawlConfigInterface);
+    const [typing, setTyping] = useState(false);
+    const [tempUrl, setTempUrl] = useState(''); // Temporary URL while typing
     const [isProcessing, setIsProcessing] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [customSelector, setCustomSelector] = useState('');
-    const [tag, setTag] = useState('');
-    const [fields, setFields] = useState<string[]>([]);
-    const [sheetId, setSheetId] = useState('');
-    const [paginationMethod, setPaginationMethod] = useState<keyof PaginationInterface>('URL_PAGINATION');
-    const [newUrl, setNewUrl] = useState('');
-    const [url, setUrl] = useState('');
-        const [typing, setTyping] = useState(false);
-        const [tempUrl, setTempUrl] = useState(''); // Temporary URL while typing
 
     // ✅ Fetch User ID
     useEffect(() => {
@@ -42,7 +55,7 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
         const fetchUserId = async () => {
             try {
                 const { data } = await axios.get('/api/user');
-                setUserId(data.userId);
+                setCrawlConfig((prev) => ({ ...prev, userId: data.id }));
             } catch (error) {
                 console.error('❌ Error fetching user ID:', error);
             } finally {
@@ -52,33 +65,17 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
         fetchUserId();
     }, []);
 
-    // ✅ Add Selector
-
     // ✅ Start Crawling/Scraping
     const startProcessing = async () => {
         if (mode === "crawl") startCrawl();
         else startScrape();
-
         setIsProcessing(true);
-        
     };
     const startScrape = async () => {
     }
     const startCrawl = async () => {
         try {
-            const payload = {
-                userId,
-                name,
-                tag,
-                fields,
-                url,            
-                paginationMethod: PaginationMethods[paginationMethod].name
-,
-                sheetId,
-                customSelector,
-            };
-
-            await axios.post(`${process.env.NEXT_PUBLIC_API}/crawl/test`, payload);
+            await axios.post(`${process.env.NEXT_PUBLIC_API}/crawl/start`, crawlConfig);
             toast.success(`${mode === 'crawl' ? 'Crawling' : 'Scraping'} started! Data will be available soon.`);
         } catch (error) {
             console.error(`❌ ${mode} failed:`, error);
@@ -90,40 +87,49 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
 
     // ✅ Clear Data
     const clearData = () => {
-        setUrls(['']);
-        setSelector("");
-        setName('');
-        setCustomSelector('');
-        setPaginationMethod('');
-        setSheetId('');
-        setFields([]);
-        setTag('');
-        setUrl('');
+        setCrawlConfig({
+            urls: [''],
+            name: '',
+            customSelector: '',
+            tag: '',
+            fields: [],
+            sheetId: '',
+            paginationMethod: PaginationMethods.NO_PAGINATION.name as keyof PaginationInterface,
+            url: '',
+            pages: 5,
+            userId: crawlConfig.userId
+        })
+    };
+    const handleInputChange = (key: keyof CrawlConfigInterface, value: any) => {
+        setCrawlConfig((prev) => ({ ...prev, [key]: value }));
     };
     const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setTempUrl(e.target.value);
         setTyping(true);
     };
-    // ✅ Bulk Add URLs
+
     return (
         <>
             <div className="p-4 max-w-3xl mx-auto bg-white rounded-lg shadow-md">
-                <PaginationSettings paginationMethod={paginationMethod} setPaginationMethod={setPaginationMethod} url={url} />
+                <PaginationSettings crawlConfig={crawlConfig} setCrawlConfig={setCrawlConfig} />
                 <h1 className="text-xl font-bold">{isScraper ? '🖥️ Browser Scraper' : '🌐 Smart Web Crawler'}</h1>
-                <ScraperUrlInput url={url} setUrl={setUrl} typing={typing} setTyping={setTyping} tempUrl={tempUrl} setTempUrl={setTempUrl} handleUrlChange={handleUrlChange} />
-                {mode === "scrape" && ( <BulkUrl newUrl={newUrl} setNewUrl={setNewUrl} urls={urls} setUrls={setUrls} />)}
+                <ScraperUrlInput setUrl={(newUrl) =>
+                    handleInputChange('url', newUrl)
+                } typing={typing} setTyping={setTyping} tempUrl={tempUrl} handleUrlChange={handleUrlChange} />
+
+                {mode === "scrape" && (<BulkUrl crawlConfig={crawlConfig} handleInputChange={handleInputChange} />)}
                 <input
                     type="text"
                     placeholder={`Enter ${mode} Name (Optional)`}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={crawlConfig.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
                     className="border rounded p-2 w-full mt-3"
                 />
                 <input
                     type="text"
                     placeholder="Google Sheet ID (Premium Feature)"
-                    value={sheetId}
-                    onChange={(e) => setSheetId(e.target.value)}
+                    value={crawlConfig.sheetId}
+                    onChange={(e) => handleInputChange('sheetId', e.target.value)}
                     className="border rounded p-2 w-full mt-3"
                 />
 
@@ -131,8 +137,8 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
                 <input
                     type="text"
                     placeholder="Custom CSS Selector (optional)"
-                    value={customSelector}
-                    onChange={(e) => setCustomSelector(e.target.value)}
+                    value={crawlConfig.customSelector}
+                    onChange={(e) => handleInputChange('customSelector', e.target.value)}
                     className="border rounded p-2 w-full mt-3"
                 />
 
@@ -141,13 +147,13 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
                     <input
                         type="text"
                         placeholder="Item You are Selecting ..(eg: Venue, Shoes, Book)"
-                        value={tag}
-                        onChange={(e) => setTag(e.target.value)}
+                        value={crawlConfig.tag}
+                        onChange={(e) => handleInputChange('tag', e.target.value)}
                         className="border rounded p-2 flex-grow"
                     />
                 </div>
 
-                <ScraperFields fields={fields} setFields={setFields} />
+                <ScraperFields fields={crawlConfig.fields} setCrawlConfig={setCrawlConfig} />
 
                 <div className="flex justify-center gap-6 mt-4">
                     <button
@@ -167,8 +173,8 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
                 </div>
 
             </div>
-            {!loading && <CrawlHistory handleUrlChange={handleUrlChange} setName={setName} setTag={setTag} setFields={setFields} 
-            setSheetId={setSheetId} setCustomSelector={setCustomSelector}  />}
+            {!loading && <CrawlHistory crawlConfig={crawlConfig} setCrawlConfig={setCrawlConfig} handleUrlChange={handleUrlChange} />
+        }
         </>
     );
 }

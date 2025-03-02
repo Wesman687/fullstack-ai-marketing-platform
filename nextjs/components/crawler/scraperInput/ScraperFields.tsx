@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
+import { CrawlConfigInterface } from '../ScraperForm';
 
 interface ScraperFieldsProps {
     fields: string[];
-    setFields: React.Dispatch<React.SetStateAction<string[]>>;
+        setCrawlConfig: React.Dispatch<React.SetStateAction<CrawlConfigInterface>>;
 }
 
-function ScraperFields({ fields, setFields }: ScraperFieldsProps) {
+function ScraperFields({ fields, setCrawlConfig }: ScraperFieldsProps) {
     const [isBulkInputOpen, setIsBulkInputOpen] = useState(false);
     const [newField, setNewField] = useState('');
     const [bulkInput, setBulkInput] = useState('');
@@ -17,21 +18,30 @@ function ScraperFields({ fields, setFields }: ScraperFieldsProps) {
             .map((field: string) => field.trim())
             .filter((field: string) => field !== '');
 
-        setFields((prevFields) => [...new Set([...prevFields, ...parsedFields])]);
+        setCrawlConfig((prev) => ({
+            ...prev,
+            fields: [...new Set([...prev.fields, ...parsedFields])], // Ensure unique fields
+        }));
         setBulkInput('');
         setIsBulkInputOpen(false);
     };
 
     const addField = () => {
         if (newField.trim() !== '') {
-            setFields((prevFields) => [...prevFields, newField.trim()]);
+            setCrawlConfig((prev) => ({
+                ...prev,
+                fields: [...prev.fields, newField.trim()],
+            }));
             setNewField('');
         }
     };
 
     // ✅ Remove Field
     const removeField = (index: number) => {
-        setFields((prevFields) => prevFields.filter((_, i) => i !== index));
+        setCrawlConfig((prev) => ({
+            ...prev,
+            fields: prev.fields.filter((_, i) => i !== index),
+        }));
     };
 
     return (

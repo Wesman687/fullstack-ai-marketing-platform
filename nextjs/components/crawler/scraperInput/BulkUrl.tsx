@@ -1,32 +1,33 @@
 import { validateUrl } from '@/app/utils/validateUrl';
-import React, { useState } from 'react'
+import React, { useState } from 'react';
+import { CrawlConfigInterface } from '../ScraperForm';
+
 interface BulkUrlProps {
-    newUrl: string;
-    setNewUrl: React.Dispatch<React.SetStateAction<string>>;
-    urls: string[];
-    setUrls: React.Dispatch<React.SetStateAction<string[]>>;
+    crawlConfig: CrawlConfigInterface;
+    handleInputChange: (key: keyof CrawlConfigInterface, value: any) => void;
 }
 
-function BulkUrl({ newUrl, setNewUrl, urls, setUrls }: BulkUrlProps) {
+function BulkUrl({ crawlConfig, handleInputChange }: BulkUrlProps) {
     const [isBulkInputOpen, setIsBulkInputOpen] = React.useState(false);
     const [bulkInput, setBulkInput] = useState('');
     const [error, setError] = useState<string>(''); // ✅ URL Validation Error State
-
-    // ✅ Handle URL Input
+    const [newUrl, setNewUrl] = useState('');
 
     const addUrl = () => {
         if (!validateUrl(newUrl)) {
             setError('❌ Invalid URL. Please enter a valid URL.');
             return;
         }
-        setUrls([...urls, newUrl]);
+
+        handleInputChange('urls', [...crawlConfig.urls, newUrl]);
+        
         setNewUrl(''); // Clear input
         setError(''); // Clear error
     };
 
-    // ✅ Remove URL (Scraper Mode Only)
+    // ✅ Remove URL
     const removeUrl = (index: number) => {
-        setUrls(urls.filter((_, i) => i !== index));
+        handleInputChange("urls", crawlConfig.urls.filter((_, i) => i !== index)); 
     };
 
     const addBulkUrls = () => {
@@ -40,11 +41,12 @@ function BulkUrl({ newUrl, setNewUrl, urls, setUrls }: BulkUrlProps) {
             return;
         }
 
-        setUrls((urls) => [...new Set([...urls, ...parsedUrls])]);
+        handleInputChange('urls', [...crawlConfig.urls, ...parsedUrls]);
         setBulkInput('');
         setIsBulkInputOpen(false);
         setError('');
     };
+
     return (
         <>
             <h3 className="font-semibold mt-4">Additional URLs</h3>
@@ -53,12 +55,22 @@ function BulkUrl({ newUrl, setNewUrl, urls, setUrls }: BulkUrlProps) {
                     type="text"
                     placeholder="Enter additional URL..."
                     value={newUrl}
-                    onChange={(e) => setNewUrl(e.target.value)}
+                    onChange={(e) =>
+                        setNewUrl(e.target.value)
+                    }
                     className="border rounded p-2 flex-grow"
                 />
-                <button onClick={addUrl} className="bg-green-500 text-white text-2xl px-4 py-1 rounded">+</button>
+                <button
+                    onClick={addUrl}
+                    className="bg-green-500 text-white text-2xl px-4 py-1 rounded"
+                >
+                    +
+                </button>
                 {/* Bulk Add URLs */}
-                <button onClick={() => setIsBulkInputOpen(!isBulkInputOpen)} className="bg-blue-500 text-white px-4 py-2 rounded">
+                <button
+                    onClick={() => setIsBulkInputOpen(!isBulkInputOpen)}
+                    className="bg-blue-500 text-white px-4 py-2 rounded"
+                >
                     📋 Bulk Add URLs
                 </button>
             </div>
@@ -72,24 +84,32 @@ function BulkUrl({ newUrl, setNewUrl, urls, setUrls }: BulkUrlProps) {
                         onChange={(e) => setBulkInput(e.target.value)}
                         className="border rounded p-2 w-full h-24"
                     />
-                    <button onClick={addBulkUrls} className="bg-blue-500 text-white px-4 py-2 rounded">
+                    <button
+                        onClick={addBulkUrls}
+                        className="bg-blue-500 text-white px-4 py-2 rounded"
+                    >
                         Add URLs from List ➡️
                     </button>
                 </div>
             )}
             {/* Display Additional URLs */}
-            {urls.length > 1 && (
+            {crawlConfig.urls.length > 1 && (
                 <ul className="mt-3">
-                    {urls.slice(1).map((url, index) => (
+                    {crawlConfig.urls.slice(1).map((url, index) => (
                         <li key={index} className="flex justify-between bg-gray-100 p-2 rounded mb-1">
                             <span>{url}</span>
-                            <button onClick={() => removeUrl(index + 1)} className="text-red-500">❌</button>
+                            <button
+                                onClick={() => removeUrl(index + 1)}
+                                className="text-red-500"
+                            >
+                                ❌
+                            </button>
                         </li>
                     ))}
                 </ul>
             )}
         </>
-    )
+    );
 }
 
-export default BulkUrl
+export default BulkUrl;

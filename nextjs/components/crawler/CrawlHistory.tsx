@@ -1,11 +1,12 @@
-'use client';
-
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import CrawlViewer from './CrawlViewer';
 import ActionDropdown from './ActionDropDown';
 import toast from 'react-hot-toast';
 import { handleDownloadHTML, handleDownloadPDF, handleExportAndDownloadExcel, handleExportToGoogleSheets, updateGoogleSheetId } from './utils/crawlExport';
+import { CrawlConfigInterface } from './ScraperForm';
+import { CrawlResult } from '@/server/db/schema/db2schema';
+import { pages } from 'next/dist/build/templates/app-page';
 
 interface CrawlRequest {
   id: string;
@@ -14,35 +15,27 @@ interface CrawlRequest {
   name: string;
   tag: string;
   createdAt: string;
-  fields:  string[] ;
+  updatedAt: string;
+  pages: number;
+  fields: string[];
   google_sheet_id: string;
   custom_selector: string;
 }
-interface CrawlResult {
-    id: string;
-    jobId: string;
-    userId: string;
-    data: Record<string, string>;
-    createdAt: string;
-  }
 
 interface CrawlHistoryProps {
-  setTag: React.Dispatch<React.SetStateAction<string>>;
-  setFields: React.Dispatch<React.SetStateAction<string[]>>;
-  setName: React.Dispatch<React.SetStateAction<string>>;
+  crawlConfig: CrawlConfigInterface;
+  setCrawlConfig: React.Dispatch<React.SetStateAction<CrawlConfigInterface>>;
   handleUrlChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  setCustomSelector: React.Dispatch<React.SetStateAction<string>>;
-  setSheetId: React.Dispatch<React.SetStateAction<string>>;
 }
 
-const CrawlHistory = ({ setTag,  setFields, setName, handleUrlChange, setCustomSelector, setSheetId }: CrawlHistoryProps) => {
+const CrawlHistory = ({ crawlConfig, setCrawlConfig, handleUrlChange }: CrawlHistoryProps) => {
   const [crawlRequests, setCrawlRequests] = useState<CrawlRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showCrawlViewer, setShowCrawlViewer] = useState(false);
   const [crawlId, setCrawlId] = useState('');
 
-  // ✅ Fetch all crawl requests for the user
+  // ✅ Fetch all crawl requests
   const fetchCrawlRequests = async () => {
     try {
       const response = await axios.get(`/api/crawl/requests`);
@@ -55,7 +48,6 @@ const CrawlHistory = ({ setTag,  setFields, setName, handleUrlChange, setCustomS
     }
   };
 
-
   const resendCrawlRequest = async (request: CrawlRequest) => {
     try {
       const response = await axios.post(`${process.env.NEXT_PUBLIC_API}/crawl/resend/${request.id}`);
@@ -67,14 +59,20 @@ const CrawlHistory = ({ setTag,  setFields, setName, handleUrlChange, setCustomS
     }
   };
 
+  // ✅ Update crawlConfig state in a single call
   const reloadData = (request: CrawlRequest) => {
-    setName(request.name);
+    setCrawlConfig((prev) => ({
+      ...prev,
+      name: request.name || '',
+      url: request.url || '',
+      pages: request.pages ?? 5,
+      tag: request.tag || '',
+      fields: request.fields || [],
+      sheetId: request.google_sheet_id || '',
+      customSelector: request.custom_selector || '',
+    }));
+
     handleUrlChange({ target: { value: request.url } } as React.ChangeEvent<HTMLInputElement>);
-    setTag(request.tag);
-    setFields(request.fields);
-    setSheetId(request.google_sheet_id);
-    setCustomSelector(request.custom_selector)
-    console.log(request)
   };
 
   // ✅ Delete Crawl Request
@@ -86,15 +84,13 @@ const CrawlHistory = ({ setTag,  setFields, setName, handleUrlChange, setCustomS
       console.error('❌ Delete Error:', err);
     }
   };
-
-  // ✅ Download Crawl Request Data
   const downloadCrawlRequest = async (id: string, type: string) => {
     try {
       const response = await axios.get<{ crawlResults: CrawlResult[] }>(`/api/crawl/result/${id}`);
       const rawData = response.data.crawlResults;
-      
+
       console.log(rawData);
-  
+
       // ✅ Extract parsed `data` field from each record
       const parsedDataArray = rawData.map((row) => {
         try {
@@ -104,9 +100,9 @@ const CrawlHistory = ({ setTag,  setFields, setName, handleUrlChange, setCustomS
           return {}; // Return empty object if parsing fails
         }
       });
-  
+
       if (type === 'csv') {
-        const csvData = convertToCSV(rawData);
+        const csvData = convertToCSV(parsedDataArray);
         const blob = new Blob([csvData], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -115,7 +111,7 @@ const CrawlHistory = ({ setTag,  setFields, setName, handleUrlChange, setCustomS
         link.click();
       } else {
         const jsonData = JSON.stringify(parsedDataArray, null, 2); // Pretty-print JSON
-  
+
         const blob = new Blob([jsonData], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -127,25 +123,16 @@ const CrawlHistory = ({ setTag,  setFields, setName, handleUrlChange, setCustomS
       console.error('❌ Download Error:', err);
     }
   };
-  
-  const convertToCSV = (data: CrawlResult[]): string => {
+
+  // ✅ Convert JSON to CSV
+  const convertToCSV = (data: Record<string, string>[]): string => {
     if (data.length === 0) return '';
-  
-    // ✅ Parse JSON from `data` field and get headers dynamically
-    const parsedDataArray = data.map((row) => {
-      try {
-        return typeof row.data === 'string' ? JSON.parse(row.data) : row.data; // Handle both string and parsed JSON
-      } catch (error) {
-        console.error("❌ Error parsing JSON:", error);
-        return {}; // Return empty object on failure
-      }
-    });
-  
+
     // ✅ Extract unique headers dynamically
-    const headers = [...new Set(parsedDataArray.flatMap(Object.keys))];
-  
+    const headers = [...new Set(data.flatMap(Object.keys))];
+
     // ✅ Convert data objects to CSV rows
-    const rows = parsedDataArray.map((parsedData) =>
+    const rows = data.map((parsedData) =>
       headers
         .map((header) => {
           const value = parsedData[header] || ''; // Handle missing values
@@ -153,17 +140,16 @@ const CrawlHistory = ({ setTag,  setFields, setName, handleUrlChange, setCustomS
         })
         .join(',')
     );
-  
+
     return `${headers.join(',')}\n${rows.join('\n')}`;
   };
-  
 
   useEffect(() => {
     fetchCrawlRequests();
-    const interval = setInterval(fetchCrawlRequests, 5000); // ⏳ Poll every 5 seconds instead of 1 second
+    const interval = setInterval(fetchCrawlRequests, 5000); // ⏳ Poll every 5 seconds
     return () => clearInterval(interval);
   }, []);
-  
+
   if (loading || error)
     return (
       <div className="p-24 w-full h-full flex justify-center">
@@ -188,6 +174,7 @@ const CrawlHistory = ({ setTag,  setFields, setName, handleUrlChange, setCustomS
                   <th className="p-2 border hidden md:table-cell truncate">URL</th>
                   <th className="p-2 border">Status</th>
                   <th className="p-2 border">Created</th>
+                  <th className="p-2 border">Updated</th>
                   <th className="p-2 border">Actions</th>
                 </tr>
               </thead>
@@ -198,19 +185,20 @@ const CrawlHistory = ({ setTag,  setFields, setName, handleUrlChange, setCustomS
                     <td className="border p-2 max-w-[300px] truncate hidden md:table-cell">{request.url}</td>
                     <td className="border p-2">{request.status}</td>
                     <td className="border p-2">{new Date(request.createdAt).toLocaleDateString()}</td>
+                    <td className="border p-2">{new Date(request.updatedAt).toLocaleDateString()}</td>
                     <td className="border p-2 flex justify-center">
                       <ActionDropdown
                         onView={() => {
                           setShowCrawlViewer(true);
                           setCrawlId(request.id);
                         }}
+                        onResend={() => resendCrawlRequest(request)}
+                        onDelete={() => deleteCrawlRequest(request.id)}
+                        onReload={() => reloadData(request)}
                         onDownloadJSON={() => downloadCrawlRequest(request.id, 'json')}
                         onDownloadCSV={() => downloadCrawlRequest(request.id, 'csv')}
                         onDownloadExcel={() => handleExportAndDownloadExcel(request.id)}
                         onDownloadPDF={() => handleDownloadPDF(request.id)}
-                        onResend={() => resendCrawlRequest(request)}
-                        onDelete={() => deleteCrawlRequest(request.id)}
-                        onReload={() => reloadData(request)}
                         onDownloadHTML={() => handleDownloadHTML(request.id)}
                         onExportGoogleSheets={() => handleExportToGoogleSheets(request.id)}
                         onUpdateSheets={() => updateGoogleSheetId(request.id)}
