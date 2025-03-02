@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 import { Loader2, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import CrawlResultModal from './CrawlResultModal'; // Import the new component
@@ -23,58 +23,50 @@ interface CrawlResult {
 
 export default function CrawlViewer({ id }: CrawlViewerProps) {
   const [crawlResults, setCrawlResults] = useState<CrawlResult[]>([]);
-  const [headers, setHeaders] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
   const [editedValue, setEditedValue] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedResult, setSelectedResult] = useState<CrawlResult | null>(null);
 
-  useEffect(() => {
-    setLoading(true);
+  const headers = useMemo(() => {
+    const dynamicKeys = new Set<string>();
+    crawlResults.forEach((result) => Object.keys(result.data).forEach((key) => dynamicKeys.add(key)));
+    return [...dynamicKeys];
+  }, [crawlResults]);
 
-    const fetchData = async () => {
-      try {
-        const response = await axios.get<{ crawlResults: CrawlResult[] }>(`/api/crawl/result/${id}`);
-        console.log(response.data.crawlResults)
-        const results = response.data.crawlResults.map((result) => ({
-          ...result,
-          data: typeof result.data === 'string' ? JSON.parse(result.data) : result.data, // Handle both stringified and parsed JSON
-        }));
-
-        if (results.length > 0) {
-          const dynamicKeys = new Set<string>();
-          results.forEach((result) => {
-            Object.keys(result.data).forEach((key) => dynamicKeys.add(key));
-          });
-
-          setHeaders([...dynamicKeys]);
-        }
-
-        setCrawlResults(results);
-      } catch (error) {
-        console.error('❌ Error fetching crawl request:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+  const fetchData = useCallback(async () => {
+    try {
+      const response = await axios.get<{ crawlResults: CrawlResult[] }>(`/api/crawl/result/${id}`);
+      setCrawlResults(response.data.crawlResults);
+    } catch (error) {
+      console.error('❌ Error fetching crawl request:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
-  const handleView = (result: CrawlResult) => {
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+
+  const handleView = useCallback( (result: CrawlResult) => {
     console.log(result)
     setSelectedResult(result);
     setIsModalOpen(true);
-  };
+  },[])
 
 
   // ✅ Handle editing the full data string
-  const handleEdit = (id: string, field: string, value: string) => {
+  const handleEdit = useCallback((id: string, field: string, value: string) => {
     setEditingCell({ id, field });
     setEditedValue(value);
-  };
+  },[])
 
-  const handleSaveEdit = async () => {
+  const handleSaveEdit = useCallback( async () => {
     if (editingCell) {
       // ✅ Update local state
       const updatedResults = crawlResults.map((result) => {
@@ -105,9 +97,9 @@ export default function CrawlViewer({ id }: CrawlViewerProps) {
         console.error('❌ Error updating field:', error);
       }
     }
-  };
+  },[crawlResults, editingCell, editedValue])
 
-  const handleSaveFromModal = async (updatedData: Record<string, string>) => {
+  const handleSaveFromModal = useCallback( async (updatedData: Record<string, string>) => {
     if (selectedResult) {
       // ✅ Update local state for instant UI feedback
       const updatedResults = crawlResults.map((result) =>
@@ -127,46 +119,36 @@ export default function CrawlViewer({ id }: CrawlViewerProps) {
         console.error('❌ Error updating from modal:', error);
       }
     }
-  };
+  },[crawlResults, selectedResult])
 
 
 
   // ✅ Delete an entire column from all records
-  const handleDeleteColumn = async (field: string) => {
-    // 1️⃣ Remove the field from local state
-    const updatedResults = crawlResults.map((result) => {
-      const updatedData = { ...result.data };
-      delete updatedData[field]; // Remove the specific field from data
-      return {
-        ...result,
-        data: updatedData,
-      };
-    });
+ const handleDeleteColumn = useCallback(async (field: string) => {
+    const updatedResults = crawlResults.map((result) => ({
+      ...result,
+      data: Object.fromEntries(Object.entries(result.data).filter(([key]) => key !== field)),
+    }));
 
-    // 2️⃣ Update local state for UI
     setCrawlResults(updatedResults);
-    setHeaders((prev) => prev.filter((header) => header !== field));
 
-    // 3️⃣ Send update requests for affected rows
     try {
-      await axios.delete(`/api/crawl/result`, {
-        data: { job_id: crawlResults[0].jobId, remove_field: field }, // Send data payload
-      });
+      await axios.delete(`/api/crawl/result`, { data: { job_id: crawlResults[0]?.jobId, remove_field: field } });
     } catch (error) {
       console.error("❌ Error deleting column:", error);
     }
-  }
-  const handleDeleteRow = async (id: string) => {
-    try {
-      // Optimistically remove row from UI
-      setCrawlResults((prevResults) => prevResults.filter((result) => result.id !== id));
+  }, [crawlResults]);
 
-      // Send DELETE request to API
+  const handleDeleteRow = useCallback(async (id: string) => {
+    setCrawlResults((prev) => prev.filter((result) => result.id !== id));
+
+    try {
       await axios.delete(`/api/crawl/result/${id}`);
     } catch (error) {
       console.error("❌ Error deleting row:", error);
     }
-  };
+  }, []);
+
 
   return (
     <>
@@ -175,7 +157,7 @@ export default function CrawlViewer({ id }: CrawlViewerProps) {
           <Loader2 className="animate-spin" />
         </div>
       ) : (
-        <div className="p-4 bg-gray-100 rounded-lg">
+        <div className="p-4 shadow-lg max-w-screen-2xl overflow-y-hidden overflow-x-auto rounded-lg">
           {crawlResults.length > 0 ? (
             <table className="min-w-full bg-white border border-gray-300 rounded-lg">
               <thead>

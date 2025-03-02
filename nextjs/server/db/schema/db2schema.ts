@@ -14,6 +14,7 @@ export const crawlRequestsTable = mysqlTable("crawl_requests", {
     status: varchar("status", { length: 255 }).default("pending").notNull(),
     google_sheet_id: varchar("google_sheet_id", { length: 255 }),
     pages: int("pages").default(5),
+    cookies: json("cookies"),
     createdAt: timestamp("created_at")
         .default(sql`CURRENT_TIMESTAMP`)
         .notNull(),

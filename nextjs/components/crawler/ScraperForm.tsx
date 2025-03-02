@@ -1,12 +1,13 @@
 'use client';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
-import toast from 'react-hot-toast';
 import PaginationSettings, { PaginationMethods } from './PaginationSettings';
-import CrawlHistory from './CrawlHistory';
 import BulkUrl from './scraperInput/BulkUrl';
-import ScraperFields from './scraperInput/ScraperFields';
 import ScraperUrlInput from './scraperInput/ScraperUrlInput';
+import toast from 'react-hot-toast';
+import CrawlHistoryTab from './CrawlHistoryTab';
+import CookieManager from './CookieManager';
+import ScraperFields from './scraperInput/ScraperFields';
 
 interface ScraperFormProps {
     mode: 'crawl' | 'scrape';
@@ -16,6 +17,16 @@ export interface PaginationInterface {
         name: string;
         desc: string;
     }
+}
+export interface CookieInterface {
+    name: string;
+    value: string;
+    domain: string;
+    path?: string;
+    httpOnly?: boolean;
+    secure?: boolean;
+    sameSite?: "Strict" | "Lax" | "None";
+    expires?: number;
 }
 export interface CrawlConfigInterface {
     urls: string[];
@@ -27,11 +38,12 @@ export interface CrawlConfigInterface {
     paginationMethod: keyof PaginationInterface;
     url: string;
     pages: number;
-    userId: string;
+    cookies?: CookieInterface[];
 }
 
 export default function ScraperForm({ mode }: ScraperFormProps) {
     const isScraper = mode === 'scrape';
+    const [isClient, setIsClient] = useState(false);
     const [crawlConfig, setCrawlConfig] = useState({
         urls: [''], // Multiple URLs for Scrape, Single for Crawl
         name: '',
@@ -42,40 +54,40 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
         paginationMethod: 'NO_PAGINATION' as keyof PaginationInterface,
         url: '',
         pages: 5,
-        userId: '',
+        cookies: [] as CookieInterface[],
     } as CrawlConfigInterface);
     const [typing, setTyping] = useState(false);
     const [tempUrl, setTempUrl] = useState(''); // Temporary URL while typing
     const [isProcessing, setIsProcessing] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [userId, setUserId] = useState('');
+    const [cooldown, setCooldown] = useState(false);
 
+    const fetchUserId = useCallback(async () => {
+        try {
+            const { data } = await axios.get('/api/user');
+            setUserId(data.userId);
+        } catch (error) {
+            console.error('❌ Error fetching user ID:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
     // ✅ Fetch User ID
     useEffect(() => {
         setLoading(true);
-        const fetchUserId = async () => {
-            try {
-                const { data } = await axios.get('/api/user');
-                setCrawlConfig((prev) => ({ ...prev, userId: data.id }));
-            } catch (error) {
-                console.error('❌ Error fetching user ID:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchUserId();
-    }, []);
+        fetchUserId().then(() => setIsClient(true)); // ✅ Wait for fetchUserId() before setting client state
+    }, [fetchUserId]);
 
-    // ✅ Start Crawling/Scraping
-    const startProcessing = async () => {
-        if (mode === "crawl") startCrawl();
-        else startScrape();
-        setIsProcessing(true);
-    };
-    const startScrape = async () => {
-    }
-    const startCrawl = async () => {
+    const startScrape = useCallback(async () => {
+    }, []);
+    const startCrawl = useCallback(async () => {
+        const payload = {
+            ...crawlConfig,
+            userId,
+        }
         try {
-            await axios.post(`${process.env.NEXT_PUBLIC_API}/crawl/start`, crawlConfig);
+            await axios.post(`${process.env.NEXT_PUBLIC_API}/crawl/start`, payload);
             toast.success(`${mode === 'crawl' ? 'Crawling' : 'Scraping'} started! Data will be available soon.`);
         } catch (error) {
             console.error(`❌ ${mode} failed:`, error);
@@ -83,10 +95,54 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
         } finally {
             setIsProcessing(false);
         }
-    }
+        setIsProcessing(false);
+    }, [crawlConfig, userId, mode]);
+    const validateCrawlConfig = useCallback(() => {
+        if (!crawlConfig.url.trim()) {
+            toast.error('❌ URL is required.');
+            return false;
+        }
+        if (!crawlConfig.name.trim()) {
+            toast.error('❌ Name is required.');
+            return false;
+        }
+        if (!crawlConfig.tag.trim()) {
+            toast.error('❌ Tag is required.');
+            return false;
+        }
+        if (crawlConfig.fields.length === 0) {
+            toast.error('❌ At least one field must be selected.');
+            return false;
+        }
+        return true;
+    }, [crawlConfig]);
+    const processingTimeOut =  useCallback(() => {
+        if (!validateCrawlConfig()) return;
+
+        if (cooldown) {
+            toast.error('⏳ Please wait before starting another crawl.');
+            return;
+        }
+
+        if (!userId) {
+            toast.error('❌ User ID not found. Please refresh the page.');
+            return;
+        }
+
+        setIsProcessing(true);
+        setCooldown(true); // Prevent spamming
+
+        if (mode === "crawl") startCrawl();
+        else startScrape();
+
+        // ⏳ Set cooldown timer (10 seconds)
+        setTimeout(() => setCooldown(false), 10000);
+    }, [validateCrawlConfig, cooldown, userId, mode, startCrawl, startScrape]);
+
 
     // ✅ Clear Data
     const clearData = () => {
+        setIsProcessing(false);
         setCrawlConfig({
             urls: [''],
             name: '',
@@ -97,27 +153,24 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
             paginationMethod: PaginationMethods.NO_PAGINATION.name as keyof PaginationInterface,
             url: '',
             pages: 5,
-            userId: crawlConfig.userId
         })
     };
-    const handleInputChange = (key: keyof CrawlConfigInterface, value: any) => {
+    const handleInputChange = useCallback((key: keyof CrawlConfigInterface, value: string) => {
         setCrawlConfig((prev) => ({ ...prev, [key]: value }));
-    };
-    const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    }, []);
+    const handleUrlChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setTempUrl(e.target.value);
         setTyping(true);
-    };
+    }, []);
 
-    return (
+    return isClient ? (
         <>
             <div className="p-4 max-w-3xl mx-auto bg-white rounded-lg shadow-md">
                 <PaginationSettings crawlConfig={crawlConfig} setCrawlConfig={setCrawlConfig} />
                 <h1 className="text-xl font-bold">{isScraper ? '🖥️ Browser Scraper' : '🌐 Smart Web Crawler'}</h1>
-                <ScraperUrlInput setUrl={(newUrl) =>
-                    handleInputChange('url', newUrl)
-                } typing={typing} setTyping={setTyping} tempUrl={tempUrl} handleUrlChange={handleUrlChange} />
+                <ScraperUrlInput setCrawlConfig={setCrawlConfig} typing={typing} setTyping={setTyping} tempUrl={tempUrl} handleUrlChange={handleUrlChange} />
 
-                {mode === "scrape" && (<BulkUrl crawlConfig={crawlConfig} handleInputChange={handleInputChange} />)}
+                {mode === "scrape" && (<BulkUrl crawlConfig={crawlConfig} setCrawlConfig={setCrawlConfig} />)}
                 <input
                     type="text"
                     placeholder={`Enter ${mode} Name (Optional)`}
@@ -152,12 +205,12 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
                         className="border rounded p-2 flex-grow"
                     />
                 </div>
-
-                <ScraperFields fields={crawlConfig.fields} setCrawlConfig={setCrawlConfig} />
+                <ScraperFields crawlConfig={crawlConfig} setCrawlConfig={setCrawlConfig} />
+                <CookieManager crawlConfig={crawlConfig} setCrawlConfig={setCrawlConfig} />
 
                 <div className="flex justify-center gap-6 mt-4">
                     <button
-                        onClick={startProcessing}
+                        onClick={processingTimeOut}
                         className="bg-blue-600 text-white px-3 py-2 rounded transition duration-300 hover:bg-blue-700 hover:scale-105 active:scale-95"
                         disabled={isProcessing}
                     >
@@ -173,8 +226,8 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
                 </div>
 
             </div>
-            {!loading && <CrawlHistory crawlConfig={crawlConfig} setCrawlConfig={setCrawlConfig} handleUrlChange={handleUrlChange} />
-        }
+            {!loading && <CrawlHistoryTab crawlConfig={crawlConfig} setCrawlConfig={setCrawlConfig} handleUrlChange={handleUrlChange} />
+            }
         </>
-    );
+    ) : null
 }

@@ -4,10 +4,10 @@ import { CrawlConfigInterface } from '../ScraperForm';
 
 interface BulkUrlProps {
     crawlConfig: CrawlConfigInterface;
-    handleInputChange: (key: keyof CrawlConfigInterface, value: any) => void;
+    setCrawlConfig: React.Dispatch<React.SetStateAction<CrawlConfigInterface>>;
 }
 
-function BulkUrl({ crawlConfig, handleInputChange }: BulkUrlProps) {
+function BulkUrl({ crawlConfig, setCrawlConfig }: BulkUrlProps) {
     const [isBulkInputOpen, setIsBulkInputOpen] = React.useState(false);
     const [bulkInput, setBulkInput] = useState('');
     const [error, setError] = useState<string>(''); // ✅ URL Validation Error State
@@ -19,7 +19,7 @@ function BulkUrl({ crawlConfig, handleInputChange }: BulkUrlProps) {
             return;
         }
 
-        handleInputChange('urls', [...crawlConfig.urls, newUrl]);
+        setCrawlConfig((prev) => ({ ...prev, urls: [...prev.urls, newUrl] }));
         
         setNewUrl(''); // Clear input
         setError(''); // Clear error
@@ -27,9 +27,11 @@ function BulkUrl({ crawlConfig, handleInputChange }: BulkUrlProps) {
 
     // ✅ Remove URL
     const removeUrl = (index: number) => {
-        handleInputChange("urls", crawlConfig.urls.filter((_, i) => i !== index)); 
+        setCrawlConfig((prev) => {
+            const updatedUrls = prev.urls.filter((_, i) => i !== index);
+            return { ...prev, urls: updatedUrls };
+        });
     };
-
     const addBulkUrls = () => {
         const parsedUrls = bulkInput
             .split(/[\n,]+/) // Split by newline or comma
@@ -41,7 +43,7 @@ function BulkUrl({ crawlConfig, handleInputChange }: BulkUrlProps) {
             return;
         }
 
-        handleInputChange('urls', [...crawlConfig.urls, ...parsedUrls]);
+        setCrawlConfig((prev) => ({ ...prev, urls: [...prev.urls, ...parsedUrls] }));
         setBulkInput('');
         setIsBulkInputOpen(false);
         setError('');
