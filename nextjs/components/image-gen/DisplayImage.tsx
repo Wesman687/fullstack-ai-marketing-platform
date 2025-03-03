@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 import { Menu } from 'lucide-react'; // ✅ Import Download Icon
 import React from 'react';
 import ImageGallery from './ImageGallery';
