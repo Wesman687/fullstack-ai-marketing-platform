@@ -166,7 +166,7 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
     return isClient ? (
         <>
             <div className="p-4 max-w-3xl mx-auto bg-white rounded-lg shadow-md">
-                <PaginationSettings crawlConfig={crawlConfig} setCrawlConfig={setCrawlConfig} />
+                {!isScraper && <PaginationSettings crawlConfig={crawlConfig} setCrawlConfig={setCrawlConfig} />}
                 <h1 className="text-xl font-bold">{isScraper ? '🖥️ Browser Scraper' : '🌐 Smart Web Crawler'}</h1>
                 <ScraperUrlInput setCrawlConfig={setCrawlConfig} typing={typing} setTyping={setTyping} tempUrl={tempUrl} handleUrlChange={handleUrlChange} />
 
@@ -226,7 +226,7 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
                 </div>
 
             </div>
-            {!loading && <CrawlHistoryTab crawlConfig={crawlConfig} setCrawlConfig={setCrawlConfig} handleUrlChange={handleUrlChange} />
+            {!loading && <CrawlHistoryTab crawlConfig={crawlConfig} setCrawlConfig={setCrawlConfig} handleUrlChange={handleUrlChange} isScraper={isScraper} />
             }
         </>
     ) : null

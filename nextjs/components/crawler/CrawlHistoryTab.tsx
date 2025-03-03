@@ -7,10 +7,11 @@ interface CrawlHistoryTabInterface {
         crawlConfig: CrawlConfigInterface;
       setCrawlConfig: React.Dispatch<React.SetStateAction<CrawlConfigInterface>>;
       handleUrlChange: (e: React.ChangeEvent<HTMLInputElement>) => void;  
+      isScraper: boolean;
 }
 
-export default function CrawlHistoryTab({crawlConfig, setCrawlConfig, handleUrlChange}: CrawlHistoryTabInterface) {
-  const [activeTab, setActiveTab] = useState<'crawler' | 'browser'>('crawler');
+export default function CrawlHistoryTab({crawlConfig, setCrawlConfig, handleUrlChange, isScraper}: CrawlHistoryTabInterface) {
+  const [activeTab, setActiveTab] = useState<'crawler' | 'browser'>(isScraper ? "browser" : "crawler");
   const [showCrawlViewer, setShowCrawlViewer] = useState(false);
   const [crawlId, setCrawlId] = useState<string>('');
   

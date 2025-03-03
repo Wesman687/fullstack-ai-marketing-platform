@@ -62,7 +62,7 @@ export default function PaginationSettings({
   
       setError("");
       try {
-        await axios.post(`${process.env.NEXT_PUBLIC_API}/scrape/detect-pagination`, { url });
+        await axios.post(`${process.env.NEXT_PUBLIC_API}/crawl/detect-pagination`, { url });
         console.log("🔍 Pagination Detection Started");
   
         let attempts = 0;
@@ -70,7 +70,7 @@ export default function PaginationSettings({
   
         while (attempts < maxAttempts) {
           try {
-            const response = await axios.get(`${process.env.NEXT_PUBLIC_API}/scrape/get-pagination-result`, {
+            const response = await axios.get(`${process.env.NEXT_PUBLIC_API}/crawl/get-pagination-result`, {
               params: { url },
             });
   

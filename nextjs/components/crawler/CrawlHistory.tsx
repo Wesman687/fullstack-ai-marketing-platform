@@ -215,6 +215,7 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
                       <ActionDropdown
                         onView={() => {
                           setShowCrawlViewer(true);
+                          console.log(request.id)
                           setCrawlId(request.id);
                         }}
                         onResend={() => {
