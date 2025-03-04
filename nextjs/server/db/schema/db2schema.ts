@@ -63,10 +63,19 @@ export const scrapedRequestsTable = mysqlTable("scraped_requests", {
         .notNull()
         .references(() => usersTable.id, { onDelete: "cascade" }),
     url: varchar("url", { length: 255 }).notNull(), // Website the user scraped
+    urls: json("urls").notNull(), // Multiple URLs for Scrape, Single for Crawl
+    tag: varchar("tag", { length: 255 }).notNull(), // The HTML tag used for scraping
+    fields: json("fields").notNull(), // The fields to scrape
+    cookies: json("cookies"), // Cookies to use for scraping
+    customSelector: varchar("custom_selector", { length: 255 }), // Custom CSS selector
+    google_sheet_id: varchar("google_sheet_id", { length: 255 }), // Google Sheet ID
     selectors: json("selectors").notNull(), // The CSS selectors used for scraping
     name: varchar("name", { length: 255 }).notNull(), // User-defined name for request
     status: varchar("status", { length: 255 }).default("pending").notNull(), // Status of the scraping task
     createdAt: timestamp("created_at")
+        .default(sql`CURRENT_TIMESTAMP`)
+        .notNull(),
+    updatedAt: timestamp("updated_at")
         .default(sql`CURRENT_TIMESTAMP`)
         .notNull(),
     completedAt: timestamp("completed_at"),
@@ -77,7 +86,7 @@ export const scrapedResultsTable = mysqlTable("scraped_results", {
         .primaryKey()
         .notNull()
         .default(sql`(UUID())`),
-    requestId: varchar("request_id", { length: 36 })
+    jobId: varchar("job_id", { length: 36 })
         .notNull()
         .references(() => scrapedRequestsTable.id, { onDelete: "cascade" }),
     userId: varchar("user_id", { length: 255 })

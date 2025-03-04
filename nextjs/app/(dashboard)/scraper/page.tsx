@@ -2,7 +2,7 @@
 import ScraperForm from '@/components/crawler/ScraperForm';
 import React, { useState } from 'react';
 export default function ScraperTab() {
-  const [activeTab, setActiveTab] = useState<'crawler' | 'browser'>('crawler');
+  const [activeTab, setActiveTab] = useState<'crawl' | 'scrape'>('crawl');
 
   return (
     <>
@@ -11,17 +11,17 @@ export default function ScraperTab() {
       <div className="flex border-b">
         <button
           className={`p-3 flex-1 text-center ${
-            activeTab === 'crawler' ? 'border-b-4 border-blue-500 font-bold' : 'text-gray-600'
+            activeTab === 'crawl' ? 'border-b-4 border-blue-500 font-bold' : 'text-gray-600'
           }`}
-          onClick={() => setActiveTab('crawler')}
+          onClick={() => setActiveTab('crawl')}
         >
           🌐 Smart Web Crawler
         </button>
         <button
           className={`p-3 flex-1 text-center ${
-            activeTab === 'browser' ? 'border-b-4 border-blue-500 font-bold' : 'text-gray-600'
+            activeTab === 'scrape' ? 'border-b-4 border-blue-500 font-bold' : 'text-gray-600'
           }`}
-          onClick={() => setActiveTab('browser')}
+          onClick={() => setActiveTab('scrape')}
         >
           🖥️ Browser Scraper
         </button>
@@ -29,7 +29,7 @@ export default function ScraperTab() {
 
 
     </div>
-      <>{activeTab === 'crawler' ? <ScraperForm mode="crawl" /> : <ScraperForm mode="scrape" />}</>
+      <ScraperForm mode={activeTab} /> 
       </>
   );
 }

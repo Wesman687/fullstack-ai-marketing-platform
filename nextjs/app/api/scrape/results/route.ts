@@ -37,7 +37,7 @@ export async function DELETE(request: NextRequest) {
             const rows = await trx
                 .select({ id: scrapedResultsTable.id, data: scrapedResultsTable.data })
                 .from(scrapedResultsTable)
-                .where(eq(scrapedResultsTable.requestId, job_id));
+                .where(eq(scrapedResultsTable.jobId, job_id));
 
             if (!rows.length) {
                 return NextResponse.json({ message: "No matching rows found." }, { status: 404 });
@@ -45,21 +45,23 @@ export async function DELETE(request: NextRequest) {
 
             // 2️⃣ Prepare batch updates
             const updatePromises = rows.map((row) => {
-                // ✅ Check if data is already an object (Fix the JSON issue)
-                const parsedData: Record<string, string> = typeof row.data === "string"
-                    ? JSON.parse(row.data)  // If it's a string, parse it
-                    : row.data;  // If it's already an object, use it as is
-
-                // 🛠 Delete the specified field
-                delete parsedData[remove_field];
-
-                // 🛠 Update the database entry
-                return trx
-                    .update(scrapedResultsTable)
-                    .set({ data: JSON.stringify(parsedData) }) // Store back as JSON string
-                    .where(eq(scrapedResultsTable.id, row.id))
-                    .execute();
-            });
+                            // ✅ Check if data is already an object (Fix the JSON issue)
+                            const parsedData: Record<string, string> =
+                                row.data && typeof row.data === "string"
+                                    ? JSON.parse(row.data)
+                                    :(row.data as Record<string, string>); // Ensure it's an object
+            
+                            // 🛠 Delete the specified field
+                            delete parsedData[remove_field];
+            
+                            // 🛠 Update the database entry
+                            return trx
+                                .update(scrapedResultsTable)
+                                .set({ data: parsedData }) // ✅ Store as actual JSON object
+                                .where(eq(scrapedResultsTable.id, row.id))
+                                .execute();
+                        });
+            
 
             // 3️⃣ Run all updates in parallel
             await Promise.all(updatePromises);

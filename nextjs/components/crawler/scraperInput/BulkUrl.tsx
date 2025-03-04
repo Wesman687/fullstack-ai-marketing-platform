@@ -1,5 +1,5 @@
 import { validateUrl } from '@/app/utils/validateUrl';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { CrawlConfigInterface } from '../ScraperForm';
 
 interface BulkUrlProps {
@@ -13,41 +13,50 @@ function BulkUrl({ crawlConfig, setCrawlConfig }: BulkUrlProps) {
     const [error, setError] = useState<string>(''); // ✅ URL Validation Error State
     const [newUrl, setNewUrl] = useState('');
 
-    const addUrl = () => {
+    const addUrl = useCallback(() => {
         if (!validateUrl(newUrl)) {
             setError('❌ Invalid URL. Please enter a valid URL.');
             return;
         }
-
-        setCrawlConfig((prev) => ({ ...prev, urls: [...prev.urls, newUrl] }));
-        
-        setNewUrl(''); // Clear input
-        setError(''); // Clear error
-    };
-
-    // ✅ Remove URL
-    const removeUrl = (index: number) => {
-        setCrawlConfig((prev) => {
-            const updatedUrls = prev.urls.filter((_, i) => i !== index);
+    
+        setCrawlConfig(prev => {
+            const updatedUrls = [...prev.urls, newUrl];
+            console.log("Updated URLs after adding:", updatedUrls);  // ✅ Debugging log
             return { ...prev, urls: updatedUrls };
         });
-    };
-    const addBulkUrls = () => {
+    
+        setNewUrl(''); // Clear input
+        setError(''); // Clear error
+    }, [newUrl, setCrawlConfig]);
+
+    // ✅ Remove URL
+    const removeUrl = useCallback((index: number) => {
+        setCrawlConfig(prev => {
+            const updatedUrls = prev.urls.filter((_, i) => i !== index);
+            console.log("Updated URLs after removal:", updatedUrls); // ✅ Debugging log
+            return { ...prev, urls: updatedUrls };
+        });
+    }, [setCrawlConfig]);
+    const addBulkUrls = useCallback(() => {
         const parsedUrls = bulkInput
             .split(/[\n,]+/) // Split by newline or comma
-            .map((url: string) => url.trim())
-            .filter((url: string) => url !== '' && validateUrl(url)); // ✅ Validate URLs
-
+            .map(url => url.trim())
+            .filter(url => url !== '' && validateUrl(url)); // ✅ Validate URLs
+    
         if (parsedUrls.length === 0) {
             setError('❌ No valid URLs found. Please check your input.');
             return;
         }
-
-        setCrawlConfig((prev) => ({ ...prev, urls: [...prev.urls, ...parsedUrls] }));
+    
+        setCrawlConfig(prev => {
+            const updatedUrls = [...prev.urls, ...parsedUrls];
+            return { ...prev, urls: updatedUrls };
+        });
+    
         setBulkInput('');
         setIsBulkInputOpen(false);
         setError('');
-    };
+    }, [bulkInput, setCrawlConfig]);
 
     return (
         <>
@@ -95,13 +104,13 @@ function BulkUrl({ crawlConfig, setCrawlConfig }: BulkUrlProps) {
                 </div>
             )}
             {/* Display Additional URLs */}
-            {crawlConfig.urls.length > 1 && (
+            {crawlConfig.urls.length > 0 && (
                 <ul className="mt-3">
-                    {crawlConfig.urls.slice(1).map((url, index) => (
+                    {crawlConfig.urls.map((url, index) => (
                         <li key={index} className="flex justify-between bg-gray-100 p-2 rounded mb-1">
                             <span>{url}</span>
                             <button
-                                onClick={() => removeUrl(index + 1)}
+                                onClick={() => removeUrl(index)}
                                 className="text-red-500"
                             >
                                 ❌

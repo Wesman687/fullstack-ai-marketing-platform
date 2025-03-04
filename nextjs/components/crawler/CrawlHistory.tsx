@@ -4,22 +4,8 @@ import ActionDropdown from './ActionDropDown';
 import toast from 'react-hot-toast';
 import { handleDownloadHTML, handleDownloadPDF, handleExportAndDownloadExcel, handleExportToGoogleSheets, updateGoogleSheetId } from './utils/crawlExport';
 import { CrawlConfigInterface } from './ScraperForm';
-import { CrawlResult } from '@/server/db/schema/db2schema';
 import ConfirmationModal from '../ConfirmationModal';
 
-interface CrawlRequest {
-  id: string;
-  url: string;
-  status: string;
-  name: string;
-  tag: string;
-  createdAt: string;
-  updatedAt: string;
-  pages: number;
-  fields: string[];
-  google_sheet_id: string;
-  custom_selector: string;
-}
 
 interface CrawlHistoryProps {
   crawlConfig: CrawlConfigInterface;
@@ -30,59 +16,73 @@ interface CrawlHistoryProps {
   setCrawlId: React.Dispatch<React.SetStateAction<string>>;
   setShowCrawlViewer: React.Dispatch<React.SetStateAction<boolean>>;
 }
-
+interface BaseRequest {
+  id: string;
+  name: string;
+  url: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  google_sheet_id: string;
+  pages: number;
+  tag: string;
+  fields: string[];
+  custom_selector: string;
+  data: string;
+  urls: string[];
+}
+interface RequestData {
+  [key: string]: string | number | boolean | null; // Allow structured, predictable data
+}
+interface CrawlRequest extends BaseRequest {
+  crawlData: RequestData
+}
+interface ScrapedRequest extends BaseRequest {
+  scrapeData: RequestData
+}
+type RequestType = CrawlRequest | ScrapedRequest;
 const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawlId, setShowCrawlViewer }: CrawlHistoryProps) => {
   const isScraper = mode === 'scrape';
-  const [crawlRequests, setCrawlRequests] = useState<CrawlRequest[]>([]);
+  const [requests, setRequests] = useState<Array<CrawlRequest | ScrapedRequest>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showRefreshModal, setShowRefreshModal] = useState(false);
-  const [request, setRequest] = useState<CrawlRequest | null>(null);
+  const [request, setRequest] = useState<RequestType | null>(null);
 
 
   // ✅ Fetch all crawl requests
-  const fetchCrawlRequests = useCallback(async () => {
+  const fetchRequests = useCallback(async () => {
     try {
-      const response = await axios.get(`/api/crawl/requests`);
-      setCrawlRequests(response.data.crawlRequests);
+      const response = await axios.get(`/api/${mode}/requests`);
+      setRequests(response.data.results);
     } catch (err) {
-      setError('Failed to fetch crawl requests.');
+      setError(`Failed to fetch ${mode} requests.`);
       console.error('❌ Fetch Error:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
-  const fetchScrapeRequests = useCallback(async () => {
-    try {
-      const response = await axios.get(`/api/scrape/requests`);
-      setCrawlRequests(response.data.scrapeRequests);
-    } catch (err) {
-      setError('Failed to fetch scrape requests.');
-      console.error('❌ Fetch Error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
-  , []);
+  }, [mode]);
 
-  const resendCrawlRequest = useCallback( async (request: CrawlRequest) => {
+  const resendCrawlRequest = useCallback( async (request: RequestType) => {
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API}/crawl/resend/${request.id}`);
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API}/${mode}/resend/${request.id}`);
       if (response.status === 200) {
         toast.success('Crawl request resent successfully.');
       }
     } catch (err) {
       console.error('❌ Resend Error:', err);
     }
-  },[])
+  },[mode])
 
   // ✅ Update crawlConfig state in a single call
-  const reloadData = useCallback( (request: CrawlRequest) => {
+  const reloadData = useCallback( (request: RequestType) => {
     setCrawlConfig((prev) => ({
       ...prev,
       name: request.name || '',
       url: request.url || '',
+      urls: request.urls || [],
+      scrapeUrl: mode === 'scrape' ? request.url : '',
       pages: request.pages ?? 5,
       tag: request.tag || '',
       fields: request.fields || [],
@@ -91,17 +91,17 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
     }))
 
     handleUrlChange({ target: { value: request.url } } as React.ChangeEvent<HTMLInputElement>);
-  },[handleUrlChange, setCrawlConfig])
+  },[handleUrlChange, mode, setCrawlConfig])
 
   // ✅ Delete Crawl Request
   const deleteCrawlRequest = useCallback( async (id: string) => {
     try {
-      await axios.delete(`/api/crawl/requests/${id}`);
-      setCrawlRequests((prev) => prev.filter((req) => req.id !== id));
+      await axios.delete(`/api/${mode}/requests/${id}`);
+      setRequests((prev) => prev.filter((req) => req.id !== id));
     } catch (err) {
       console.error('❌ Delete Error:', err);
     }
-  }, [])
+  }, [mode])
   // ✅ Convert JSON to CSV
   const convertToCSV = useCallback( (data: Record<string, string>[]): string => {
     if (data.length === 0) return '';
@@ -123,12 +123,8 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
   },[])
   const downloadCrawlRequest = useCallback( async (id: string, type: string) => {
     try {
-      const response = await axios.get<{ crawlResults: CrawlResult[] }>(`/api/crawl/result/${id}`);
-      const rawData = response.data.crawlResults;
-
-      console.log(rawData);
-
-      // ✅ Extract parsed `data` field from each record
+        const response = await axios.get<{ results: RequestType[]}>(`/api/${mode}/result/${id}`);
+        const rawData = response.data.results;
       const parsedDataArray = rawData.map((row) => {
         try {
           return typeof row.data === 'string' ? JSON.parse(row.data) : row.data; // Handle both string and parsed JSON
@@ -144,7 +140,7 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `crawl_request_${id}.csv`;
+        link.download = `${mode}_request_${id}.csv`;
         link.click();
       } else {
         const jsonData = JSON.stringify(parsedDataArray, null, 2); // Pretty-print JSON
@@ -153,29 +149,21 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `crawl_request_${id}.json`;
+        link.download = `${mode}_request_${id}.json`;
         link.click();
       }
     } catch (err) {
       console.error('❌ Download Error:', err);
     }
-  },[convertToCSV])
-
+  },[convertToCSV, mode])
   
 
   useEffect(() => {
-    let interval
-    if (isScraper){
-      fetchScrapeRequests()
-      interval = setInterval(fetchScrapeRequests, 5000);
-    } else {      
-      fetchCrawlRequests()
-      interval = setInterval(fetchCrawlRequests, 5000);
-    }
+      fetchRequests()
+      const interval = setInterval(fetchRequests, 5000);   
     return () => clearInterval(interval);
-
     
-  }, [fetchCrawlRequests, fetchScrapeRequests, isScraper]);
+  }, [fetchRequests, isScraper]);
 
   if (loading || error)
     return (
@@ -188,7 +176,7 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
   return (
     <>
 
-        {crawlRequests.length === 0 ? (
+        {requests.length === 0 ? (
           <p className="text-center mt-10 mb-8">{isScraper ? "No Scraper requests found" : "No crawl requests found."}</p>
         ) : (
           <div className="overflow-x-auto">
@@ -204,7 +192,7 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
                 </tr>
               </thead>
               <tbody>
-                {crawlRequests.map((request) => (
+                {requests.map((request) => (
                   <tr key={request.id} className="text-center text-xs sm:text-sm">
                     <td className="border p-2 max-w-[100px] truncate">{request.name}</td>
                     <td className="border p-2 max-w-[300px] truncate hidden md:table-cell">{request.url}</td>
@@ -215,7 +203,6 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
                       <ActionDropdown
                         onView={() => {
                           setShowCrawlViewer(true);
-                          console.log(request.id)
                           setCrawlId(request.id);
                         }}
                         onResend={() => {
@@ -229,11 +216,11 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
                         onReload={() => reloadData(request)}
                         onDownloadJSON={() => downloadCrawlRequest(request.id, 'json')}
                         onDownloadCSV={() => downloadCrawlRequest(request.id, 'csv')}
-                        onDownloadExcel={() => handleExportAndDownloadExcel(request.id)}
-                        onDownloadPDF={() => handleDownloadPDF(request.id)}
-                        onDownloadHTML={() => handleDownloadHTML(request.id)}
-                        onExportGoogleSheets={() => handleExportToGoogleSheets(request.id)}
-                        onUpdateSheets={() => updateGoogleSheetId(request.id)}
+                        onDownloadExcel={() => handleExportAndDownloadExcel(request.id, mode)}
+                        onDownloadPDF={() => handleDownloadPDF(request.id, mode)}
+                        onDownloadHTML={() => handleDownloadHTML(request.id, mode)}
+                        onExportGoogleSheets={() => handleExportToGoogleSheets(request.id, mode)}
+                        onUpdateSheets={() => updateGoogleSheetId(request.id, mode)}
                       />
                     </td>
                   </tr>

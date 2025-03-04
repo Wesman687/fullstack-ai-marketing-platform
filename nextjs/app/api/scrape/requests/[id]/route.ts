@@ -22,6 +22,8 @@ export async function DELETE(request: NextRequest) {
       .delete(scrapedRequestsTable)
       .where(eq(scrapedRequestsTable.id, id));
 
+      console.log("Crawl request deleted");
+
     return NextResponse.json({ message: 'Crawl request deleted' }, { status: 200 });
         
     } catch (error) {

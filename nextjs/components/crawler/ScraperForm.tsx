@@ -37,6 +37,7 @@ export interface CrawlConfigInterface {
     sheetId: string;
     paginationMethod: keyof PaginationInterface;
     url: string;
+    scrapeUrl: string;
     pages: number;
     cookies?: CookieInterface[];
 }
@@ -45,7 +46,7 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
     const isScraper = mode === 'scrape';
     const [isClient, setIsClient] = useState(false);
     const [crawlConfig, setCrawlConfig] = useState({
-        urls: [''], // Multiple URLs for Scrape, Single for Crawl
+        urls: [], // Multiple URLs for Scrape, Single for Crawl
         name: '',
         customSelector: '',
         tag: '',
@@ -53,6 +54,7 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
         sheetId: '',
         paginationMethod: 'NO_PAGINATION' as keyof PaginationInterface,
         url: '',
+        scrapeUrl: '',
         pages: 5,
         cookies: [] as CookieInterface[],
     } as CrawlConfigInterface);
@@ -78,16 +80,16 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
         setLoading(true);
         fetchUserId().then(() => setIsClient(true)); // ✅ Wait for fetchUserId() before setting client state
     }, [fetchUserId]);
+       
 
-    const startScrape = useCallback(async () => {
-    }, []);
-    const startCrawl = useCallback(async () => {
+
+    const startProcessing = useCallback(async () => {
         const payload = {
             ...crawlConfig,
             userId,
         }
         try {
-            await axios.post(`${process.env.NEXT_PUBLIC_API}/crawl/start`, payload);
+            await axios.post(`${process.env.NEXT_PUBLIC_API}/${mode}/start`, payload);
             toast.success(`${mode === 'crawl' ? 'Crawling' : 'Scraping'} started! Data will be available soon.`);
         } catch (error) {
             console.error(`❌ ${mode} failed:`, error);
@@ -98,8 +100,12 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
         setIsProcessing(false);
     }, [crawlConfig, userId, mode]);
     const validateCrawlConfig = useCallback(() => {
-        if (!crawlConfig.url.trim()) {
+        if (mode === "crawl" && !crawlConfig.url.trim()) {
             toast.error('❌ URL is required.');
+            return false;
+        }
+        if (mode === "scrape" && !crawlConfig.scrapeUrl.trim()) {
+            toast.error('❌ Scrape URL is required.');
             return false;
         }
         if (!crawlConfig.name.trim()) {
@@ -115,7 +121,7 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
             return false;
         }
         return true;
-    }, [crawlConfig]);
+    }, [crawlConfig.fields.length, crawlConfig.name, crawlConfig.scrapeUrl, crawlConfig.tag, crawlConfig.url, mode]);
     const processingTimeOut =  useCallback(() => {
         if (!validateCrawlConfig()) return;
 
@@ -132,19 +138,18 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
         setIsProcessing(true);
         setCooldown(true); // Prevent spamming
 
-        if (mode === "crawl") startCrawl();
-        else startScrape();
+        startProcessing();
 
         // ⏳ Set cooldown timer (10 seconds)
         setTimeout(() => setCooldown(false), 10000);
-    }, [validateCrawlConfig, cooldown, userId, mode, startCrawl, startScrape]);
+    }, [validateCrawlConfig, cooldown, userId, startProcessing]);
 
 
     // ✅ Clear Data
     const clearData = () => {
         setIsProcessing(false);
         setCrawlConfig({
-            urls: [''],
+            urls: [],
             name: '',
             customSelector: '',
             tag: '',
@@ -152,6 +157,7 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
             sheetId: '',
             paginationMethod: PaginationMethods.NO_PAGINATION.name as keyof PaginationInterface,
             url: '',
+            scrapeUrl: '',
             pages: 5,
         })
     };
@@ -168,7 +174,7 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
             <div className="p-4 max-w-3xl mx-auto bg-white rounded-lg shadow-md">
                 {!isScraper && <PaginationSettings crawlConfig={crawlConfig} setCrawlConfig={setCrawlConfig} />}
                 <h1 className="text-xl font-bold">{isScraper ? '🖥️ Browser Scraper' : '🌐 Smart Web Crawler'}</h1>
-                <ScraperUrlInput setCrawlConfig={setCrawlConfig} typing={typing} setTyping={setTyping} tempUrl={tempUrl} handleUrlChange={handleUrlChange} />
+                <ScraperUrlInput setCrawlConfig={setCrawlConfig} typing={typing} setTyping={setTyping} tempUrl={tempUrl} handleUrlChange={handleUrlChange} mode={mode} />
 
                 {mode === "scrape" && (<BulkUrl crawlConfig={crawlConfig} setCrawlConfig={setCrawlConfig} />)}
                 <input
@@ -226,7 +232,7 @@ export default function ScraperForm({ mode }: ScraperFormProps) {
                 </div>
 
             </div>
-            {!loading && <CrawlHistoryTab crawlConfig={crawlConfig} setCrawlConfig={setCrawlConfig} handleUrlChange={handleUrlChange} isScraper={isScraper} />
+            {!loading && <CrawlHistoryTab crawlConfig={crawlConfig} setCrawlConfig={setCrawlConfig} handleUrlChange={handleUrlChange} mode={mode} />
             }
         </>
     ) : null

@@ -41,9 +41,9 @@ export default function CrawlResultModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl relative 
-                      sm:w-full sm:h-full sm:max-h-full flex flex-col sm:justify-center">
+    <div className="fixed inset-0 bg-black bg-opacity-50  flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full h-fit max-w-lg sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl relative 
+                      sm:w-full sm:h-full sm:max-h-fit flex flex-col sm:justify-center">
         {Object.keys(editableData).length === 0 ? (
           <Loader2 className="animate-spin mx-auto" />
         ) : (

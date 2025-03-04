@@ -7,9 +7,10 @@ interface ScraperUrlInputProps {
     setTyping: React.Dispatch<React.SetStateAction<boolean>>;
     setCrawlConfig: React.Dispatch<React.SetStateAction<CrawlConfigInterface>>;
     handleUrlChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    mode: 'crawl' | 'scrape';
 }
 
-function ScraperUrlInput({  setCrawlConfig, tempUrl,  typing, setTyping, handleUrlChange }: ScraperUrlInputProps) {
+function ScraperUrlInput({  setCrawlConfig, tempUrl,  typing, setTyping, handleUrlChange, mode }: ScraperUrlInputProps) {
 
     const [urlError, setUrlError] = useState('');
     useEffect(() => {
@@ -17,7 +18,11 @@ function ScraperUrlInput({  setCrawlConfig, tempUrl,  typing, setTyping, handleU
 
         const timer = setTimeout(() => {
             if (validateUrl(tempUrl)) {
-                setCrawlConfig((prev) => ({ ...prev, url: tempUrl }));
+                if (mode === 'scrape') {
+                    setCrawlConfig((prev) => ({ ...prev, scrapeUrl: tempUrl }));
+                } else {
+                    setCrawlConfig((prev) => ({ ...prev, url: tempUrl }));
+                }
                 setUrlError('');
             } else {
                 setUrlError('❌ Invalid URL. Please enter a valid URL.');
@@ -26,7 +31,7 @@ function ScraperUrlInput({  setCrawlConfig, tempUrl,  typing, setTyping, handleU
         }, 500); // Wait for 500ms after the user stops typing
 
         return () => clearTimeout(timer); // Cleanup the timeout
-    }, [setCrawlConfig, setTyping, tempUrl, typing]);
+    }, [mode, setCrawlConfig, setTyping, tempUrl, typing]);
 
     // ✅ Handle Input Change
     

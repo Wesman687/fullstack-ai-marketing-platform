@@ -1,7 +1,7 @@
 import { dbSecondary } from "@/server/db";
 import { crawlResultsTable } from "@/server/db/schema/db2schema";
 import { NextRequest, NextResponse } from "next/server";
-import {  eq } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import { getAuth } from "@clerk/nextjs/server";
 import { z } from "zod";
 
@@ -46,9 +46,10 @@ export async function DELETE(request: NextRequest) {
             // 2️⃣ Prepare batch updates
             const updatePromises = rows.map((row) => {
                 // ✅ Check if data is already an object (Fix the JSON issue)
-                const parsedData: Record<string, string> = typeof row.data === "string"
-                    ? JSON.parse(row.data)  // If it's a string, parse it
-                    : row.data;  // If it's already an object, use it as is
+                const parsedData: Record<string, string> =
+                    row.data && typeof row.data === "string"
+                        ? JSON.parse(row.data)
+                        :(row.data as Record<string, string>); // Ensure it's an object
 
                 // 🛠 Delete the specified field
                 delete parsedData[remove_field];
@@ -56,7 +57,7 @@ export async function DELETE(request: NextRequest) {
                 // 🛠 Update the database entry
                 return trx
                     .update(crawlResultsTable)
-                    .set({ data: JSON.stringify(parsedData) }) // Store back as JSON string
+                    .set({ data: parsedData }) // ✅ Store as actual JSON object
                     .where(eq(crawlResultsTable.id, row.id))
                     .execute();
             });

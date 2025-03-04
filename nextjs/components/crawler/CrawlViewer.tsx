@@ -2,49 +2,62 @@
 
 import axios from 'axios';
 import { Loader2, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {  useCallback, useEffect, useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import CrawlResultModal from './CrawlResultModal'; // Import the new component
 import ActionDropdownViewer from './ActionDropDownViewer';
+import CrawlResultModal from './CrawlResultModal';
 
 
 interface CrawlViewerProps {
   id: string;
+  activeTab: 'crawl' | 'scrape';
 }
 
-interface CrawlResult {
+export interface BaseResult {
   id: string;
   jobId: string;
   userId: string;
   data: Record<string, string>;
   createdAt: string;
+  requestId: string;
+  status: string;
 }
 
-export default function CrawlViewer({ id }: CrawlViewerProps) {
-  const [crawlResults, setCrawlResults] = useState<CrawlResult[]>([]);
+export interface CrawlResult extends BaseResult {
+  crawlData: CrawlResult;
+}
+export interface ScrapedResult extends BaseResult {
+  scrapeData: ScrapedResult;
+}
+export type ResultResponse<T> = {
+  results: T[];
+};
+
+export default function CrawlViewer({ id, activeTab }: CrawlViewerProps) {
+  const [results, setResults] = useState<Array<CrawlResult | ScrapedResult>>([]);
   const [loading, setLoading] = useState(true);
   const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
   const [editedValue, setEditedValue] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedResult, setSelectedResult] = useState<CrawlResult | null>(null);
+  const [selectedResult, setSelectedResult] = useState<CrawlResult | ScrapedResult | null>(null);
 
   const headers = useMemo(() => {
     const dynamicKeys = new Set<string>();
-    crawlResults.forEach((result) => Object.keys(result.data).forEach((key) => dynamicKeys.add(key)));
+    results.forEach((result) => Object.keys(result.data).forEach((key) => dynamicKeys.add(key)));
     return [...dynamicKeys];
-  }, [crawlResults]);
+  }, [results]);
 
   const fetchData = useCallback(async () => {
     try {
-      const response = await axios.get<{ crawlResults: CrawlResult[] }>(`/api/crawl/result/${id}`);
-      setCrawlResults(response.data.crawlResults);
+      const response = await axios.get<ResultResponse< CrawlResult | ScrapedResult>>(`/api/${activeTab}/results/${id}`);
+      setResults(response.data.results);
     } catch (error) {
       console.error('❌ Error fetching crawl request:', error);
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [activeTab, id]);
 
   useEffect(() => {
     fetchData();
@@ -53,8 +66,7 @@ export default function CrawlViewer({ id }: CrawlViewerProps) {
   }, [fetchData]);
 
 
-  const handleView = useCallback( (result: CrawlResult) => {
-    console.log(result)
+  const handleView = useCallback( (result: CrawlResult | ScrapedResult) => {
     setSelectedResult(result);
     setIsModalOpen(true);
   },[])
@@ -69,7 +81,7 @@ export default function CrawlViewer({ id }: CrawlViewerProps) {
   const handleSaveEdit = useCallback( async () => {
     if (editingCell) {
       // ✅ Update local state
-      const updatedResults = crawlResults.map((result) => {
+      const updatedResults = results.map((result) => {
         if (result.id === editingCell.id) {
           return {
             ...result,
@@ -82,14 +94,14 @@ export default function CrawlViewer({ id }: CrawlViewerProps) {
         return result;
       });
 
-      setCrawlResults(updatedResults);  // Update state instantly for UI feedback
+      setResults(updatedResults);  // Update state instantly for UI feedback
       setEditingCell(null);  // Close the editing mode
 
       // ✅ Send updated data to the backend (without JSON.stringify)
       try {
         const updatedData = updatedResults.find((r) => r.id === editingCell.id)?.data;
         if (updatedData) {
-          await axios.patch(`/api/crawl/result/${editingCell.id}`, {
+          await axios.patch(`/api/${activeTab}/results/${editingCell.id}`, {
             data: updatedData,  // Send as object directly
           });
         }
@@ -97,58 +109,57 @@ export default function CrawlViewer({ id }: CrawlViewerProps) {
         console.error('❌ Error updating field:', error);
       }
     }
-  },[crawlResults, editingCell, editedValue])
+  },[editingCell, results, editedValue, activeTab])
 
   const handleSaveFromModal = useCallback( async (updatedData: Record<string, string>) => {
     if (selectedResult) {
       // ✅ Update local state for instant UI feedback
-      const updatedResults = crawlResults.map((result) =>
+      const updatedResults = results.map((result) =>
         result.id === selectedResult.id
           ? { ...result, data: updatedData }
           : result
       );
 
-      setCrawlResults(updatedResults);  // Update local state
+      setResults(updatedResults);  // Update local state
 
       // ✅ Send full updated data to the server
       try {
-        await axios.patch(`/api/crawl/result/${selectedResult.id}`, {
+        await axios.patch(`/api/crawl/results/${selectedResult.id}`, {
           data: updatedData,  // Send the object directly
         });
       } catch (error) {
         console.error('❌ Error updating from modal:', error);
       }
     }
-  },[crawlResults, selectedResult])
+  },[results, selectedResult])
 
 
 
   // ✅ Delete an entire column from all records
  const handleDeleteColumn = useCallback(async (field: string) => {
-    const updatedResults = crawlResults.map((result) => ({
+    const updatedResults = results.map((result) => ({
       ...result,
       data: Object.fromEntries(Object.entries(result.data).filter(([key]) => key !== field)),
     }));
 
-    setCrawlResults(updatedResults);
+    setResults(updatedResults);
 
     try {
-      await axios.delete(`/api/crawl/result`, { data: { job_id: crawlResults[0]?.jobId, remove_field: field } });
+      await axios.delete(`/api/${activeTab}/results`, { data: { job_id: results[0]?.jobId, remove_field: field } });
     } catch (error) {
       console.error("❌ Error deleting column:", error);
     }
-  }, [crawlResults]);
+  }, [activeTab, results]);
 
   const handleDeleteRow = useCallback(async (id: string) => {
-    setCrawlResults((prev) => prev.filter((result) => result.id !== id));
+    setResults((prev) => prev.filter((result) => result.id !== id));
 
     try {
-      await axios.delete(`/api/crawl/result/${id}`);
+      await axios.delete(`/api/${activeTab}/results/${id}`);
     } catch (error) {
       console.error("❌ Error deleting row:", error);
     }
-  }, []);
-
+  }, [activeTab]);
 
   return (
     <>
@@ -158,7 +169,7 @@ export default function CrawlViewer({ id }: CrawlViewerProps) {
         </div>
       ) : (
         <div className="p-4 shadow-lg max-w-screen-2xl overflow-y-hidden overflow-x-auto rounded-lg">
-          {crawlResults.length > 0 ? (
+          {results.length > 0 ? (
             <table className="min-w-full bg-white border border-gray-300 rounded-lg">
               <thead>
                 <tr className="bg-gray-200">
@@ -179,7 +190,7 @@ export default function CrawlViewer({ id }: CrawlViewerProps) {
                 </tr>
               </thead>
               <tbody>
-                {crawlResults.map((result, index) => (
+                {results.map((result, index) => (
                   <tr key={result.id} className="text-center hover:bg-gray-50">
                     <td className="p-2 text-center border-b">{index + 1}</td>
                     {headers.map((header) => (

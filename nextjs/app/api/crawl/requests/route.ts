@@ -13,14 +13,14 @@ export async function GET(request: NextRequest) {
     const database = await dbSecondary();
 
     try {
-        const crawlRequests = await database.drizzle
+        const results = await database.drizzle
       .select()
       .from(crawlRequestsTable)
       .where(eq(crawlRequestsTable.userId, userId))
       .orderBy(desc(crawlRequestsTable.updatedAt), desc(crawlRequestsTable.createdAt));
 
 
-    return NextResponse.json({ crawlRequests }, { status: 200 });
+    return NextResponse.json({ results }, { status: 200 });
     } catch (error) {
         console.error("❌ Error fetching crawl request:", error);
         return NextResponse.json({ error: "Crawl Request not found or unauthorized" }, { status: 404 });

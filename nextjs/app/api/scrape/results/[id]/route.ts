@@ -13,19 +13,20 @@ const updateCrawlResultSchema = z.object({
 
 export async function GET(request: NextRequest) {
     const { userId } = getAuth(request);
+    console.log("userId", userId);
     if (!userId) { return NextResponse.json({ error: "Unauthorized" }, { status: 401 }) }
 
     const url = new URL(request.url);
     const pathSegments = url.pathname.split("/");
-    const jobId = pathSegments[4]; 
+    const requestId = pathSegments[4]; 
     const database = await dbSecondary();
 
     try {
-        const crawlResults = await database.drizzle
+        const results = await database.drizzle
             .select()
             .from(scrapedResultsTable)
-            .where(eq(scrapedResultsTable.requestId, jobId));
-        return NextResponse.json({ crawlResults }, { status: 200 });
+            .where(eq(scrapedResultsTable.jobId, requestId));
+        return NextResponse.json({ results }, { status: 200 });
     } catch (error) {
         console.error("❌ Error fetching crawl request:", error);
         return NextResponse.json({ error: "Crawl Request not found or unauthorized" }, { status: 404 });

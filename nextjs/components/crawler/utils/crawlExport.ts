@@ -1,12 +1,12 @@
 import axios from "axios";
 import toast from "react-hot-toast";
 
-export const handleExportAndDownloadExcel = async (id: string) => {
+export const handleExportAndDownloadExcel = async (id: string, mode: 'crawl' | 'scrape') => {
   try {
     toast.loading("Starting Excel export...", { id: "export-excel" });
 
     // ✅ Step 1: Start the export
-    await axios.post(`${process.env.NEXT_PUBLIC_API}/export/excel/${id}`);
+    await axios.post(`${process.env.NEXT_PUBLIC_API}/export/excel/${id}`, { mode });
 
     // ✅ Step 2: Poll until file is ready
     let attempts = 0;
@@ -14,7 +14,7 @@ export const handleExportAndDownloadExcel = async (id: string) => {
 
     while (attempts < maxAttempts) {
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API}/export/excel/${id}`, { responseType: "blob" });
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API}/export/excel/${id}?=${mode}`, { responseType: "blob" });
 
         if (response.status === 200) {
           toast.dismiss("export-excel"); // Remove loading toast
@@ -24,7 +24,7 @@ export const handleExportAndDownloadExcel = async (id: string) => {
           const url = window.URL.createObjectURL(new Blob([response.data]));
           const link = document.createElement("a");
           link.href = url;
-          link.setAttribute("download", `crawl_results_${id}.xlsx`);
+          link.setAttribute("download", `${mode}_results_${id}.xlsx`);
           document.body.appendChild(link);
           link.click();
           return;
@@ -44,10 +44,10 @@ export const handleExportAndDownloadExcel = async (id: string) => {
     toast.error("Failed to export Excel.");
   }
 };
-export const handleDownloadPDF = async (id: string) => {
+export const handleDownloadPDF = async (id: string, mode: 'crawl' | 'scrape') => {
   try {
     // ✅ Step 1: Trigger PDF Generation (POST)
-    await axios.post(`${process.env.NEXT_PUBLIC_API}/export/pdf/${id}`);
+    await axios.post(`${process.env.NEXT_PUBLIC_API}/export/pdf/${id}`, { mode });
     console.log("📄 PDF generation started...");
 
     // ✅ Step 2: Wait for the file to be ready
@@ -56,7 +56,7 @@ export const handleDownloadPDF = async (id: string) => {
 
     while (attempts < maxAttempts) {
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API}/export/pdf/${id}`, { responseType: "blob" });
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API}/export/pdf/${id}?mode=${mode}`, { responseType: "blob" });
 
         if (response.status === 200) {
           console.log("✅ PDF file is ready!");
@@ -65,7 +65,7 @@ export const handleDownloadPDF = async (id: string) => {
           const url = URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
           const link = document.createElement("a");
           link.href = url;
-          link.setAttribute("download", `crawl_results_${id}.pdf`);
+          link.setAttribute("download", `${mode}_results_${id}.pdf`);
           document.body.appendChild(link);
           link.click();
           return;
@@ -86,10 +86,10 @@ export const handleDownloadPDF = async (id: string) => {
 };
 
 
-export const handleDownloadHTML = async (id: string) => {
+export const handleDownloadHTML = async (id: string, mode: 'crawl' | 'scrape') => {
   try {
     // ✅ Step 1: Trigger HTML Generation (POST)
-    await axios.post(`${process.env.NEXT_PUBLIC_API}/export/html/${id}`);
+    await axios.post(`${process.env.NEXT_PUBLIC_API}/export/html/${id}`, { mode });
     console.log("🌍 HTML generation started...");
 
     // ✅ Step 2: Wait for the file to be ready
@@ -107,7 +107,7 @@ export const handleDownloadHTML = async (id: string) => {
           const url = URL.createObjectURL(new Blob([response.data], { type: "text/html" }));
           const link = document.createElement("a");
           link.href = url;
-          link.setAttribute("download", `crawl_results_${id}.html`);
+          link.setAttribute("download", `${mode}_results_${id}.html`);
           document.body.appendChild(link);
           link.click();
           return;
@@ -127,15 +127,15 @@ export const handleDownloadHTML = async (id: string) => {
   }
 };
 
-export const handleExportToGoogleSheets = async (id: string) => {
+export const handleExportToGoogleSheets = async (id: string, mode: 'crawl' | 'scrape') => {
   try {
     toast.loading("Exporting to Google Sheets...", { id: "export-google" });
 
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_API}/export/google-sheets/${id}`);
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API}/export/google-sheets/${id}`, { mode });
 
     if (response.status === 202) {
       toast.dismiss("export-google");
-      handleMissingSheetId(id); // 🚀 Ask the user to enter a Sheet ID
+      handleMissingSheetId(id, mode); // 🚀 Ask the user to enter a Sheet ID
       return;
     }
 
@@ -148,11 +148,11 @@ export const handleExportToGoogleSheets = async (id: string) => {
   }
 };
 
-const handleMissingSheetId = async (id: string) => {
+const handleMissingSheetId = async (id: string, mode: 'crawl' | 'scrape') => {
   const newSheetId = prompt("⚠️ No Google Sheet ID found! Please enter your Google Sheet ID:");
   if (newSheetId) {
     try {
-      await axios.patch(`${process.env.NEXT_PUBLIC_API}/export/google-sheets/${id}/update-sheet-id`, { google_sheet_id: newSheetId });
+      await axios.patch(`${process.env.NEXT_PUBLIC_API}/export/google-sheets/${id}/update-sheet-id`, { google_sheet_id: newSheetId, mode });
       toast.success("✅ Google Sheet ID saved! Try exporting again.");
     } catch (error) {
       console.error("❌ Error updating Google Sheet ID:", error
@@ -161,13 +161,13 @@ const handleMissingSheetId = async (id: string) => {
     }
   }
 };
-export const updateGoogleSheetId = async (id: string) => {
+export const updateGoogleSheetId = async (id: string, mode: 'crawl' | 'scrape') => {
   const newSheetId = prompt("Enter your new Google Sheet ID:");
   if (!newSheetId) return;
 
   try {
     await axios.patch(`${process.env.NEXT_PUBLIC_API}/export/google-sheets/${id}/update-sheet-id`, {
-      google_sheet_id: newSheetId,
+      google_sheet_id: newSheetId, mode
     });
 
     toast.success("✅ Google Sheet ID updated! Try exporting again.");
