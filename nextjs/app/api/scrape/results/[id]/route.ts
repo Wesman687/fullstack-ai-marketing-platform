@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         const results = await database.drizzle
             .select()
             .from(scrapedResultsTable)
-            .where(eq(scrapedResultsTable.jobId, requestId));
+            .where(eq(scrapedResultsTable.jobId, requestId))
         return NextResponse.json({ results }, { status: 200 });
     } catch (error) {
         console.error("❌ Error fetching crawl request:", error);

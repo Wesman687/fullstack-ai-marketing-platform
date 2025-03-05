@@ -98,7 +98,7 @@ export const handleDownloadHTML = async (id: string, mode: 'crawl' | 'scrape') =
 
     while (attempts < maxAttempts) {
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API}/export/html/${id}`, { responseType: "blob" });
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API}/export/html/${id}?mode=${mode}`, { responseType: "blob" });
 
         if (response.status === 200) {
           console.log("✅ HTML file is ready!");
@@ -127,11 +127,19 @@ export const handleDownloadHTML = async (id: string, mode: 'crawl' | 'scrape') =
   }
 };
 
-export const handleExportToGoogleSheets = async (id: string, mode: 'crawl' | 'scrape') => {
+export const handleExportToGoogleSheets = async (
+  id: string,
+  mode: "crawl" | "scrape",
+  setGoogleSheetsErrorMessage: React.Dispatch<React.SetStateAction<string>>,
+  setShowGoogleSheetsErrorModal: React.Dispatch<React.SetStateAction<boolean>>
+) => {
   try {
     toast.loading("Exporting to Google Sheets...", { id: "export-google" });
 
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_API}/export/google-sheets/${id}`, { mode });
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_API}/export/google-sheets/${id}`,
+      { mode }
+    );
 
     if (response.status === 202) {
       toast.dismiss("export-google");
@@ -141,18 +149,36 @@ export const handleExportToGoogleSheets = async (id: string, mode: 'crawl' | 'sc
 
     toast.dismiss("export-google");
     toast.success("✅ Data sent to Google Sheets!");
-  } catch (error) {
+  } catch (error: unknown) {
     toast.dismiss("export-google");
-    console.error("❌ Error exporting to Google Sheets:", error);
-    toast.error("Failed to export to Google Sheets.");
+
+    if (axios.isAxiosError(error)) {
+      console.error("❌ Error exporting to Google Sheets:", error);
+    
+      const status = error.response?.status;
+      let message = error.response?.data?.message || "❌ Unknown error occurred while exporting to Google Sheets.";
+    
+      if (status === 400) {
+        message = "⚠️ The operation is not supported for this document. Ensure the Google Sheet ID is correct and that the service account has 'Editor' access.";
+      } else if (status === 403) {
+        message = "🚫 Permission Denied! Ensure that your service account email is added as an 'Editor' to the Google Sheet.";
+      }
+    
+      // ✅ Display the correct message inside the modal
+      setGoogleSheetsErrorMessage(message);
+      setShowGoogleSheetsErrorModal(true);
+    }
   }
 };
+
 
 const handleMissingSheetId = async (id: string, mode: 'crawl' | 'scrape') => {
   const newSheetId = prompt("⚠️ No Google Sheet ID found! Please enter your Google Sheet ID:");
   if (newSheetId) {
     try {
-      await axios.patch(`${process.env.NEXT_PUBLIC_API}/export/google-sheets/${id}/update-sheet-id`, { google_sheet_id: newSheetId, mode });
+      await axios.patch(`${process.env.NEXT_PUBLIC_API}/export/google-sheets/${id}/update-sheet-id`, 
+        { google_sheet_id: newSheetId, mode },
+        { headers: { "Content-Type": "application/json" } });
       toast.success("✅ Google Sheet ID saved! Try exporting again.");
     } catch (error) {
       console.error("❌ Error updating Google Sheet ID:", error
@@ -167,8 +193,8 @@ export const updateGoogleSheetId = async (id: string, mode: 'crawl' | 'scrape') 
 
   try {
     await axios.patch(`${process.env.NEXT_PUBLIC_API}/export/google-sheets/${id}/update-sheet-id`, {
-      google_sheet_id: newSheetId, mode
-    });
+      google_sheet_id: newSheetId, mode},
+      { headers: { "Content-Type": "application/json" } });
 
     toast.success("✅ Google Sheet ID updated! Try exporting again.");
   } catch (error) {
@@ -176,4 +202,6 @@ export const updateGoogleSheetId = async (id: string, mode: 'crawl' | 'scrape') 
     toast.error("❌ Failed to update Google Sheet ID.");
   }
 };
+//1H2fe3NTw4zGor_45LxCdkvQ3OsDuWEUz
+
 

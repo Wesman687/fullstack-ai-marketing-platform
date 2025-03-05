@@ -49,6 +49,8 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showRefreshModal, setShowRefreshModal] = useState(false);
   const [request, setRequest] = useState<RequestType | null>(null);
+  const [showGoogleSheetsErrorModal, setShowGoogleSheetsErrorModal] = useState(false);
+  const [googleSheetsErrorMessage, setGoogleSheetsErrorMessage] = useState("");
 
 
   // ✅ Fetch all crawl requests
@@ -123,7 +125,7 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
   },[])
   const downloadCrawlRequest = useCallback( async (id: string, type: string) => {
     try {
-        const response = await axios.get<{ results: RequestType[]}>(`/api/${mode}/result/${id}`);
+        const response = await axios.get<{ results: RequestType[]}>(`/api/${mode}/results/${id}`);
         const rawData = response.data.results;
       const parsedDataArray = rawData.map((row) => {
         try {
@@ -219,7 +221,7 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
                         onDownloadExcel={() => handleExportAndDownloadExcel(request.id, mode)}
                         onDownloadPDF={() => handleDownloadPDF(request.id, mode)}
                         onDownloadHTML={() => handleDownloadHTML(request.id, mode)}
-                        onExportGoogleSheets={() => handleExportToGoogleSheets(request.id, mode)}
+                        onExportGoogleSheets={() => handleExportToGoogleSheets(request.id, mode, setGoogleSheetsErrorMessage, setShowGoogleSheetsErrorModal)}
                         onUpdateSheets={() => updateGoogleSheetId(request.id, mode)}
                       />
                     </td>
@@ -250,6 +252,14 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
         }}
         isLoading={loading}
         onClose={() => setShowRefreshModal(false)}
+        />
+        <ConfirmationModal 
+          isOpen={showGoogleSheetsErrorModal}
+          title="Google Sheets Export Failed"
+          message={googleSheetsErrorMessage}
+          onConfirm={() => setShowGoogleSheetsErrorModal(false)}
+          isLoading={false}
+          onClose={() => setShowGoogleSheetsErrorModal(false)}
         />
       
     </>

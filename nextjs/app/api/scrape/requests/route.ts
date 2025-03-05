@@ -2,7 +2,7 @@ import { dbSecondary } from "@/server/db";
 import { scrapedRequestsTable } from "@/server/db/schema/db2schema";
 import { getAuth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
-import {  eq } from "drizzle-orm"
+import {  desc, eq } from "drizzle-orm"
 
 
 
@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
         const results = await database.drizzle
       .select()
       .from(scrapedRequestsTable)
-      .where(eq(scrapedRequestsTable.userId, userId)); // Filter by user ID
-
+      .where(eq(scrapedRequestsTable.userId, userId)) // Filter by user ID
+       .orderBy(desc(scrapedRequestsTable.updatedAt), desc(scrapedRequestsTable.createdAt));
 
     return NextResponse.json({ results }, { status: 200 });
     } catch (error) {
