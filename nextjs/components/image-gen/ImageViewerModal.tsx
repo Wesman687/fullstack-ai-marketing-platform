@@ -13,61 +13,31 @@ interface ImageViewerModalProps {
   setImages: (images: ImageModel[]) => void;
 }
 
+
 const ImageViewerModal: React.FC<ImageViewerModalProps> = ({ isOpen, image, onClose, images, setImages }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [filter, setFilter] = useState<string>("all");
-  const [currentImage, setCurrentImage] = useState<ImageModel | null>(null);
-
-  const filteredImages = images
-    .filter((item) => {
-      if (filter === "upload") return item.action === "upload";
-      if (filter === "generated") return item.action === "generate";
-      if (filter === "edit") return item.action === "edit";
-      if (filter === "upscale") return item.action === "upscale";
-      if (filter === "favorite") return item.favorite === true;
-      return true;
-    })
-    .sort((a, b) => {
-      if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
-      return Number(b.favorite) - Number(a.favorite);
-    });
-
-  useEffect(() => {
-    if (image) {
-      const index = filteredImages.findIndex((img) => img.id === image.id);
-      setCurrentIndex(index >= 0 ? index : 0);
-      setCurrentImage(filteredImages[index] || image); // ✅ Ensure a valid image is displayed
-    }
-  }, [image, images, filter, filteredImages])
-  useEffect(() => {
-    if (filteredImages.length > 0) {
-      setCurrentIndex(0); // ✅ Reset index to first image
-      setCurrentImage(filteredImages[0]); // ✅ Show first image in new filter
-    } else {
-      setCurrentImage(null); // ✅ No images? Show empty state
-    }
-  }, [filter, filteredImages]);
-
-  if (!isOpen) return null;
+  const [currentImage, setCurrentImage] = useState<ImageModel | null>(image);
 
 
-  // ✅ Navigate to Previous Image
-  const showPrevious = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex((prevIndex) => prevIndex - 1);
-      setCurrentImage(filteredImages[currentIndex - 1]); // ✅ Update displayed image
-    }
-  };
 
-  // ✅ Navigate to Next Image
-  const showNext = () => {
-    if (currentIndex < filteredImages.length - 1) {
-      setCurrentIndex((prevIndex) => prevIndex + 1);
-      setCurrentImage(filteredImages[currentIndex + 1]); // ✅ Update displayed image
-    }
-  };
+
+    const showPrevious = () => {
+      setCurrentIndex((prevIndex) => {
+        const newIndex = prevIndex > 0 ? prevIndex - 1 : prevIndex;
+        setCurrentImage(images[newIndex]);
+        return newIndex;
+      });
+    };
+  
+    const showNext = () => {
+      setCurrentIndex((prevIndex) => {
+        const newIndex = prevIndex < images.length - 1 ? prevIndex + 1 : prevIndex;
+        setCurrentImage(images[newIndex]);
+        return newIndex;
+      });
+    };
 
 
   const handleDeleteConfirm = async () => {
@@ -107,23 +77,9 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({ isOpen, image, onCl
               </button>
 
               {/* Filtering Buttons */}
-              <div className="flex space-x-2 mb-4">
-                {["all", "upload", "generated", "edit", "upscale", "favorite"].map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setFilter(type)}
-                    className={`px-3 py-1 text-sm rounded-lg ${filter === type
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-300 text-black hover:bg-gray-400"
-                      } transition`}
-                  >
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </button>
-                ))}
-              </div>
 
 
-              {filteredImages.length === 0 ? (
+              {images.length === 0 ? (
                 <div className="flex flex-col items-center justify-center min-h-[50vh]">
                   <p className="text-gray-600 text-lg">No images found for this filter.</p>
                 </div>
@@ -149,7 +105,7 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({ isOpen, image, onCl
                     <Download className="h-5 w-5" />
                   </button>
                   {/* Next Button */}
-                  {currentIndex < filteredImages.length - 1 && (
+                  {currentIndex < images.length - 1 && (
                     <button
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 p-2 bg-gray-800/80 text-white rounded-full hover:bg-gray-600 transition"
                       onClick={showNext}
