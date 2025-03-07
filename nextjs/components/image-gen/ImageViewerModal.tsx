@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, {  useState } from "react";
 import { ChevronLeft, ChevronRight, Download, Star, Trash2, X } from "lucide-react";
 import { deleteImage, downloadImage, toggleFavorite } from "@/app/utils/imageUtils";
 import ConfirmationModal from "../ConfirmationModal";
@@ -19,7 +19,6 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({ isOpen, image, onCl
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [currentImage, setCurrentImage] = useState<ImageModel | null>(image);
-
 
 
 

@@ -51,6 +51,7 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
   const [request, setRequest] = useState<RequestType | null>(null);
   const [showGoogleSheetsErrorModal, setShowGoogleSheetsErrorModal] = useState(false);
   const [googleSheetsErrorMessage, setGoogleSheetsErrorMessage] = useState("");
+  const [resultsCount, setResultsCount] = useState<Record<string, number>>({});
 
 
   // ✅ Fetch all crawl requests
@@ -123,6 +124,16 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
 
     return `${headers.join(',')}\n${rows.join('\n')}`;
   },[])
+  const fetchResultsLength = useCallback( async (id: string) => {
+    try {
+      const response = await axios.get<{ results: RequestType[]}>(`/api/${mode}/results/${id}`);
+      return response.data.results ? response.data.results.length : 0;
+    } catch (error) {
+      console.error('❌ Error fetching crawl request:', error);
+      return 0;
+    }
+  },[mode])
+  
   const downloadCrawlRequest = useCallback( async (id: string, type: string) => {
     try {
         const response = await axios.get<{ results: RequestType[]}>(`/api/${mode}/results/${id}`);
@@ -166,6 +177,21 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
     return () => clearInterval(interval);
     
   }, [fetchRequests, isScraper]);
+  useEffect(() => {
+    const fetchAllResults = async () => {
+      const counts: Record<string, number> = {};
+      await Promise.all(
+        requests.map(async (request) => {
+          counts[request.id] = await fetchResultsLength(request.id);
+        })
+      );
+      setResultsCount(counts);
+    };
+
+    if (requests.length > 0) {
+      fetchAllResults();
+    }
+  }, [requests, fetchResultsLength]);
 
   if (loading || error)
     return (
@@ -174,6 +200,7 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
         {error && <p className="text-red-500">{error}</p>}
       </div>
     );
+    
 
   return (
     <>
@@ -188,6 +215,7 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
                   <th className="p-2 border">Name</th>
                   <th className="p-2 border hidden md:table-cell truncate">URL</th>
                   <th className="p-2 border">Status</th>
+                  <th className="p-2 border">Results</th>
                   <th className="p-2 border">Created</th>
                   <th className="p-2 border">Updated</th>
                   <th className="p-2 border">Actions</th>
@@ -199,6 +227,7 @@ const CrawlHistory = ({ mode, setCrawlConfig, handleUrlChange, crawlId, setCrawl
                     <td className="border p-2 max-w-[100px] truncate">{request.name}</td>
                     <td className="border p-2 max-w-[300px] truncate hidden md:table-cell">{request.url}</td>
                     <td className="border p-2">{request.status}</td>
+                    <td className="border p-2">{resultsCount[request.id] !== undefined ? resultsCount[request.id] : "Loading..."}</td>
                     <td className="border p-2">{new Date(request.createdAt).toLocaleDateString()}</td>
                     <td className="border p-2">{new Date(request.updatedAt).toLocaleDateString()}</td>
                     <td className="border p-2 flex justify-center">

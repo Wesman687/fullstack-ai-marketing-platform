@@ -19,7 +19,7 @@ export default function CrawlHistoryTab({crawlConfig, setCrawlConfig, handleUrlC
   }, [mode]);
     return (
         <>
-      <div className="my-10 max-h-[40vh] overflow-scroll overflow-x-hidden border p-4 border-gray-200 bg-white rounded-lg shadow-lg w-full">
+      <div className="my-10 max-h-[60vh] overflow-scroll overflow-x-hidden border p-4 border-gray-200 bg-white rounded-lg shadow-lg w-full">
         <div className="flex border-b">
           <button
             className={`p-3 flex-1 text-center ${
